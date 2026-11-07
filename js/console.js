@@ -359,6 +359,13 @@ var Console = (function () {
       if (jeuEnCours && jeuEnCours.inst.touche) jeuEnCours.inst.touche(k);
       return;
     }
+    // Dans le menu, Retour fait sortir du plein écran (on retrouve la barre du navigateur).
+    if ((k === 10009 || k === 27) && estPleinEcran()) {
+      e.preventDefault();
+      var d = document;
+      if (d.exitFullscreen) d.exitFullscreen(); else if (d.webkitExitFullscreen) d.webkitExitFullscreen();
+      return;
+    }
     var n = jeux.length;
     if (!n) return;
     if (k === 37) selection = (selection + n - 1) % n;
