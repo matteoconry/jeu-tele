@@ -59,3 +59,10 @@ main { flex: 1; display: flex; gap: 2vw; min-height: 0; }
 #toast { position: absolute; left: 50%; top: 11vh; transform: translateX(-50%); background: rgba(0,0,0,.75);
   padding: 1.2vh 2vw; border-radius: 1vw; font-size: 1.5vw; opacity: 0; transition: opacity .3s; pointer-events: none; }
 #toast.visible { opacity: 1; }
+
+/* ---------- Plein écran ---------- */
+header .droite { display: flex; align-items: center; gap: 1.5vw; }
+#pleinEcran { font: inherit; font-size: 1.3vw; font-weight: 700; color: #000; background: #ffd166; border: 0;
+  border-radius: .8vw; padding: 1vh 1.4vw; cursor: pointer; animation: clignote 1.6s ease-in-out infinite; }
+#pleinEcran.cache { display: none; }
+@keyframes clignote { 50% { box-shadow: 0 0 0 .5vw rgba(255,209,102,.35); } }

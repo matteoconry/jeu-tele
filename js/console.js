@@ -197,7 +197,7 @@ var Console = (function () {
       return {
         id: d.id, nom: d.nom, emoji: d.emoji || '🎮', description: d.description || '',
         min: d.min, max: d.max, jouable: ok,
-        raison: !d.dispo ? 'Bientôt' : (n < d.min ? 'Il faut ' + d.min + ' joueurs' : '')
+        raison: !d.dispo ? 'Bientôt' : (n < d.min ? 'Il faut ' + d.min + ' joueur' + (d.min > 1 ? 's' : '') : '')
       };
     });
   }
@@ -208,7 +208,7 @@ var Console = (function () {
     for (var i = 0; i < jeux.length; i++) if (jeux[i].id === id) def = jeux[i];
     if (!def) return;
     if (!def.dispo) { toast(def.nom + ' : bientôt disponible'); return; }
-    if (connectes().length < def.min) { toast(def.nom + ' : il faut ' + def.min + ' joueurs'); return; }
+    if (connectes().length < def.min) { toast(def.nom + ' : il faut ' + def.min + ' joueur' + (def.min > 1 ? 's' : '')); return; }
 
     $('menu').className = 'cache';
     $('nomJeu').textContent = (def.emoji || '') + ' ' + def.nom;
@@ -319,10 +319,33 @@ var Console = (function () {
     $('miniJoueurs').innerHTML = h;
   }
 
+  // ---------- Plein écran ----------
+  // Le navigateur exige un geste (clic ou touche OK) : on passe en plein écran au premier appui.
+  function estPleinEcran() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+  function pleinEcranPossible() {
+    var d = document.documentElement;
+    return !!(d.requestFullscreen || d.webkitRequestFullscreen);
+  }
+  function passerPleinEcran() {
+    var d = document.documentElement;
+    try {
+      var r = d.requestFullscreen ? d.requestFullscreen() : (d.webkitRequestFullscreen ? d.webkitRequestFullscreen() : null);
+      if (r && r.catch) r.catch(function () { toast('Plein écran refusé : utilise le menu ☰ du navigateur'); });
+    } catch (e) { toast('Plein écran : utilise le menu ☰ du navigateur'); }
+  }
+  function majBoutonPleinEcran() {
+    $('pleinEcran').className = estPleinEcran() ? 'cache' : '';
+  }
+  document.addEventListener('fullscreenchange', majBoutonPleinEcran);
+  document.addEventListener('webkitfullscreenchange', majBoutonPleinEcran);
+  document.addEventListener('click', function () { if (!estPleinEcran() && pleinEcranPossible()) passerPleinEcran(); });
+
   // ---------- Télécommande Samsung / clavier ----------
   // Flèches + OK dans le menu ; Retour (10009) ou Échap pour quitter un jeu.
   document.addEventListener('keydown', function (e) {
     var k = e.keyCode;
+    // Premier OK sur la télécommande : plein écran (le suivant lance le jeu).
+    if (k === 13 && !estPleinEcran() && pleinEcranPossible()) { e.preventDefault(); passerPleinEcran(); return; }
     if (jeuEnCours) {
       if (k === 10009 || k === 27 || k === 8) { e.preventDefault(); retourMenu(); }
       return;
@@ -398,6 +421,10 @@ var Console = (function () {
 
   function demarrer() {
     canvas = $('jeu');
+    if (!pleinEcranPossible()) {
+      $('pleinEcran').textContent = 'Plein écran : menu ☰ du navigateur';
+      $('pleinEcran').style.animation = 'none';
+    }
     window.addEventListener('resize', redim);
     redim();
     requestAnimationFrame(boucle);
