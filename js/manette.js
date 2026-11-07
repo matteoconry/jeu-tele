@@ -169,10 +169,21 @@
     if (ui.emoji) h += '<div class="perso-emoji">' + ui.emoji + '</div>';
     if (ui.titre) h += '<div class="perso-titre">' + echapper(ui.titre) + '</div>';
     if (ui.texte) h += '<div class="perso-texte">' + echapper(ui.texte) + '</div>';
+    // Cartes (main d'un jeu de cartes) : touchables si ui.cartes.choix
+    var cartes = ui.cartes, choisies = {};
+    if (cartes && cartes.liste) {
+      h += '<div class="perso-cartes' + (cartes.grandes ? ' grandes' : '') + (cartes.choix ? ' choix' : '') + '">';
+      cartes.liste.forEach(function (k) {
+        h += '<div class="carte' + (k.rouge ? ' rouge' : '') + (k.j ? ' joker' : '') + (k.marque ? ' marque' : '') + '" data-c="' + echapper(k.id) + '">' +
+          (k.j ? '<b>★</b><i>JOKER</i>' : '<b>' + echapper(k.r) + '</b><i>' + echapper(k.s) + '</i>') + '</div>';
+      });
+      h += '</div>';
+    }
     if (ui.boutons && ui.boutons.length) {
       h += '<div class="perso-boutons ' + (ui.disposition || 'colonne') + '">';
       ui.boutons.forEach(function (b) {
         h += '<button class="perso-bouton" data-id="' + echapper(b.id) + '"' + (b.desactive ? ' disabled' : '') +
+          (b.selMin !== undefined ? ' data-min="' + b.selMin + '"' : '') + (b.selMax !== undefined ? ' data-max="' + b.selMax + '"' : '') +
           (b.couleur ? ' style="background:' + b.couleur + '"' : '') + '>' + echapper(b.label) +
           (b.sous ? '<small>' + echapper(b.sous) + '</small>' : '') + '</button>';
       });
@@ -182,6 +193,28 @@
     $('perso').style.background = ui.fond || '';
     if (ui.vibrer) vibrer(ui.vibrer);
 
+    function majSelection() {
+      var n = Object.keys(choisies).length;
+      $('perso').querySelectorAll('.perso-bouton').forEach(function (x) {
+        if (x.className.indexOf('choisi') !== -1) return;
+        var mi = x.getAttribute('data-min'), ma = x.getAttribute('data-max');
+        if (mi === null && ma === null) return;
+        x.disabled = (mi !== null && n < +mi) || (ma !== null && n > +ma);
+      });
+    }
+    if (cartes && cartes.choix) {
+      $('perso').querySelectorAll('.carte').forEach(function (el) {
+        el.addEventListener('click', function () {
+          var id = el.getAttribute('data-c');
+          if (choisies[id]) { delete choisies[id]; el.className = el.className.replace(' sel', ''); }
+          else { choisies[id] = true; el.className += ' sel'; }
+          vibrer(10);
+          majSelection();
+        });
+      });
+    }
+    majSelection();
+
     $('perso').querySelectorAll('.perso-bouton').forEach(function (el) {
       var id = el.getAttribute('data-id');
       if (ui.mode === 'manette') {
@@ -190,7 +223,7 @@
       } else {
         el.addEventListener('click', function () {
           if (el.disabled) return;
-          envoyer({ t: 'choix', id: id, cle: ui.cle });
+          envoyer({ t: 'choix', id: id, cle: ui.cle, sel: Object.keys(choisies) });
           vibrer(30);
           $('perso').querySelectorAll('.perso-bouton').forEach(function (x) {
             x.disabled = true;

@@ -68,7 +68,7 @@
       var P = L.PDe(j);
       if (!P || m.t !== 'choix') return false;
       var d = demandes[P.num];
-      if (d && (!m.cle || m.cle === d.cle)) { delete demandes[P.num]; d.ok(m.id, F.t); }
+      if (d && (!m.cle || m.cle === d.cle)) { delete demandes[P.num]; P.sel = Array.isArray(m.sel) ? m.sel.map(Number) : []; d.ok(m.id, F.t); }
       return true;
     };
     L.arrivee = function (j, uiSpectateur) {
