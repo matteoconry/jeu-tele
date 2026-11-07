@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Jeu télé – manette</title>
+<style>
+  * { box-sizing: border-box; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: #14232b; color: #fff;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden; touch-action: none; overscroll-behavior: none; }
+  #haut { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  #titre { font-size: 20px; font-weight: bold; }
+  #etat { font-size: 13px; opacity: .85; text-align: right; }
+  #zone { position: absolute; top: 60px; bottom: 0; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: space-around; flex-wrap: wrap; gap: 20px; padding: 10px; }
+  #pad { position: relative; width: min(72vw, 60vh, 320px); height: min(72vw, 60vh, 320px); }
+  .dir { position: absolute; width: 34%; height: 34%; background: #2c4552; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center; font-size: 34px; color: #cfe; }
+  .dir.actif { background: var(--couleur, #ff6b35); color: #000; }
+  #h { left: 33%; top: 0; } #b { left: 33%; bottom: 0; }
+  #g { left: 0; top: 33%; } #d { right: 0; top: 33%; }
+  #action { width: min(34vw, 30vh, 150px); height: min(34vw, 30vh, 150px); border-radius: 50%;
+    background: var(--couleur, #ff6b35); color: #000; font-weight: bold; font-size: 22px;
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 0 rgba(0,0,0,.4); }
+  #action.actif { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.4); }
+  #message { position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+    text-align: center; padding: 30px; background: rgba(20,35,43,.95); font-size: 20px; line-height: 1.4; }
+  #message button { margin-top: 16px; font-size: 18px; padding: 10px 20px; border-radius: 10px; border: 0; }
+</style>
+</head>
+<body>
+<div id="haut">
+  <div id="titre">Manette</div>
+  <div id="etat">Connexion…</div>
+</div>
+
+<div id="zone">
+  <div id="pad">
+    <div class="dir" id="h">▲</div>
+    <div class="dir" id="g">◀</div>
+    <div class="dir" id="d">▶</div>
+    <div class="dir" id="b">▼</div>
+  </div>
+  <div id="action">A</div>
+</div>
+
+<div id="message"><div><div id="msgTexte"></div><button id="msgBouton" onclick="location.reload()">Réessayer</button></div></div>
+
+<script src="lib/peerjs.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var params = new URLSearchParams(location.search);
+  var salle = (params.get('salle') || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+  // Identifiant stable de ce téléphone : s'il se reconnecte, il retrouve sa place.
+  var idTel = null;
+  try { idTel = localStorage.getItem('jeutele-idtel'); } catch (e) {}
+  if (!idTel) {
+    idTel = 'tel-' + Math.random().toString(36).slice(2, 10);
+    try { localStorage.setItem('jeutele-idtel', idTel); } catch (e) {}
+  }
+
+  var etatEl = document.getElementById('etat');
+  function etat(t) { etatEl.textContent = t; }
+  function message(t, bouton) {
+    document.getElementById('msgTexte').textContent = t;
+    document.getElementById('msgBouton').style.display = bouton === false ? 'none' : '';
+    document.getElementById('message').style.display = t ? 'flex' : 'none';
+  }
+
+  if (!salle) {
+    var saisie = prompt('Code de la salle affiché sur la télé :');
+    if (saisie) { location.search = '?salle=' + encodeURIComponent(saisie.trim().toUpperCase()); }
+    else message('Aucune salle. Scanne le QR code affiché sur la télé.');
+    return;
+  }
+
+  var peer = null, conn = null, essais = 0, minuterieReco = null, refuse = false;
+
+  function connecter() {
+    clearTimeout(minuterieReco);
+    if (!peer || peer.destroyed) {
+      peer = new Peer(window.PEER_OPTS || { debug: 1 });
+      peer.on('open', ouvrirConnexion);
+      peer.on('disconnected', function () { if (!peer.destroyed) peer.reconnect(); });
+      peer.on('error', function (err) {
+        console.error(err);
+        if (err.type === 'peer-unavailable') {
+          etat('Télé introuvable');
+          message('La télé (salle ' + salle + ') ne répond pas. Vérifie que la page est bien ouverte sur la télé, puis réessaie.');
+        } else if (err.type === 'browser-incompatible') {
+          message('Ce navigateur ne gère pas WebRTC.', false);
+        } else {
+          etat('Erreur : ' + err.type);
+          programmerReco();
+        }
+      });
+    } else if (peer.open) {
+      ouvrirConnexion();
+    }
+  }
+
+  function ouvrirConnexion() {
+    if (conn && conn.open) return;
+    etat('Connexion à la télé…');
+    conn = peer.connect('jeutele-mc-' + salle, { reliable: true, metadata: { idTel: idTel } });
+    var c = conn;
+    c.on('open', function () { essais = 0; etat('Connecté (salle ' + salle + ')'); message(''); });
+    c.on('data', function (m) {
+      if (!m) return;
+      if (m.t === 'bienvenue') {
+        document.getElementById('titre').textContent = 'Joueur ' + m.numero;
+        document.documentElement.style.setProperty('--couleur', m.couleur);
+        if (navigator.vibrate) navigator.vibrate(80);
+      } else if (m.t === 'plein') {
+        refuse = true;
+        message('La partie est déjà complète (2 joueurs).');
+      } else if (m.t === 'pong') {
+        etat('Connecté · ' + Math.round(performance.now() - m.ts) + ' ms');
+      }
+    });
+    c.on('close', function () { if (c === conn) { etat('Déconnecté, reconnexion…'); programmerReco(); } });
+    c.on('error', function () { if (c === conn) programmerReco(); });
+  }
+
+  function programmerReco() {
+    clearTimeout(minuterieReco);
+    if (refuse) return;
+    essais++;
+    if (essais > 8) { message('Connexion perdue avec la télé.'); return; }
+    minuterieReco = setTimeout(connecter, Math.min(8000, 1000 * essais));
+  }
+
+  function envoyer(m) { if (conn && conn.open) conn.send(m); }
+
+  // Mesure de la latence toutes les 2 s (affichée en haut à droite).
+  setInterval(function () { envoyer({ t: 'ping', ts: performance.now() }); }, 2000);
+
+  // Revenir sur l'onglet → se reconnecter si besoin.
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && !(conn && conn.open)) { essais = 0; connecter(); }
+  });
+
+  // ---------- Croix directionnelle (multi-touch, on peut glisser d'une flèche à l'autre) ----------
+  var DIRS = { h: [0, -1], b: [0, 1], g: [-1, 0], d: [1, 0] };
+  var pad = document.getElementById('pad');
+  var touchesPad = {}; // identifiant du doigt -> id de la flèche
+  var dernier = '0,0';
+
+  function flecheSous(x, y) {
+    var r = pad.getBoundingClientRect();
+    var cx = (x - r.left) / r.width - 0.5, cy = (y - r.top) / r.height - 0.5;
+    if (Math.abs(cx) > 0.6 || Math.abs(cy) > 0.6) return null;
+    if (Math.abs(cx) < 0.12 && Math.abs(cy) < 0.12) return null;
+    // Zone diagonale : on combine les deux directions.
+    var res = [];
+    if (cy < -0.12) res.push('h'); else if (cy > 0.12) res.push('b');
+    if (cx < -0.12) res.push('g'); else if (cx > 0.12) res.push('d');
+    if (res.length === 2 && Math.abs(Math.abs(cx) - Math.abs(cy)) > 0.15) {
+      res = [Math.abs(cx) > Math.abs(cy) ? res[1] : res[0]];
+    }
+    return res.join('');
+  }
+
+  function majDirection() {
+    var x = 0, y = 0, actifs = {};
+    for (var k in touchesPad) {
+      var f = touchesPad[k];
+      if (!f) continue;
+      for (var i = 0; i < f.length; i++) { var d = DIRS[f.charAt(i)]; x += d[0]; y += d[1]; actifs[f.charAt(i)] = true; }
+    }
+    x = Math.max(-1, Math.min(1, x)); y = Math.max(-1, Math.min(1, y));
+    ['h', 'b', 'g', 'd'].forEach(function (id) {
+      document.getElementById(id).className = 'dir' + (actifs[id] ? ' actif' : '');
+    });
+    var cle = x + ',' + y;
+    if (cle !== dernier) { dernier = cle; envoyer({ t: 'dir', x: x, y: y }); }
+  }
+
+  function surPad(e) {
+    e.preventDefault();
+    for (var i = 0; i < e.changedTouches.length; i++) {
+      var t = e.changedTouches[i];
+      if (e.type === 'touchend' || e.type === 'touchcancel') delete touchesPad[t.identifier];
+      else touchesPad[t.identifier] = flecheSous(t.clientX, t.clientY);
+    }
+    majDirection();
+  }
+  pad.addEventListener('touchstart', surPad, { passive: false });
+  pad.addEventListener('touchmove', surPad, { passive: false });
+  pad.addEventListener('touchend', surPad, { passive: false });
+  pad.addEventListener('touchcancel', surPad, { passive: false });
+
+  // Souris (pour tester depuis un ordi)
+  var sourisBas = false;
+  pad.addEventListener('mousedown', function (e) { sourisBas = true; touchesPad.souris = flecheSous(e.clientX, e.clientY); majDirection(); });
+  window.addEventListener('mousemove', function (e) { if (sourisBas) { touchesPad.souris = flecheSous(e.clientX, e.clientY); majDirection(); } });
+  window.addEventListener('mouseup', function () { if (sourisBas) { sourisBas = false; delete touchesPad.souris; majDirection(); } });
+
+  // Renvoi régulier de la direction (au cas où un message se perdrait pendant une reconnexion).
+  setInterval(function () { if (dernier !== '0,0') { var p = dernier.split(','); envoyer({ t: 'dir', x: +p[0], y: +p[1] }); } }, 500);
+
+  // ---------- Bouton A ----------
+  var action = document.getElementById('action');
+  function appuiA(e) {
+    e.preventDefault();
+    action.className = 'actif';
+    envoyer({ t: 'action' });
+    if (navigator.vibrate) navigator.vibrate(30);
+  }
+  function relacheA(e) { e.preventDefault(); action.className = ''; }
+  action.addEventListener('touchstart', appuiA, { passive: false });
+  action.addEventListener('touchend', relacheA, { passive: false });
+  action.addEventListener('mousedown', appuiA);
+  action.addEventListener('mouseup', relacheA);
+
+  // Bloque le menu contextuel / zoom accidentel
+  document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+
+  // Sur un rafraîchissement de la direction après reconnexion, on renvoie l'état courant.
+  connecter();
+})();
+</script>
+</body>
+</html>
