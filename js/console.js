@@ -11,6 +11,8 @@
  */
 var Console = (function () {
   'use strict';
+  // À augmenter à chaque mise en ligne qui touche la manette : un téléphone avec une autre version se recharge tout seul.
+  var VERSION = 8;
 
   var COULEURS = ['#ff6b35', '#4ecdc4', '#ffd166', '#c77dff', '#80ed99', '#ff8fab'];
   var PREFIXE = 'jeutele-mc-';
@@ -129,7 +131,7 @@ var Console = (function () {
       };
       joueurs[place] = j;
 
-      envoyer(j, { t: 'bienvenue', numero: numero, nom: j.nom, couleur: j.couleur, couleurs: COULEURS });
+      envoyer(j, { t: 'bienvenue', numero: numero, nom: j.nom, couleur: j.couleur, couleurs: COULEURS, version: VERSION });
       toast(j.nom + ' a rejoint la partie');
       son(880, 0.12);
       if (jeuEnCours) {

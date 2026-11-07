@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <title>Jeu télé – manette</title>
-<link rel="stylesheet" href="css/manette.css">
+<script>document.write('<link rel="stylesheet" href="css/manette.css?v=' + Date.now() + '">');</script>
 </head>
 <body>
 <div id="haut">
@@ -54,7 +54,9 @@
 
 <div id="message"><div><div id="msgTexte"></div><button id="msgBouton">Réessayer</button></div></div>
 
-<script src="lib/peerjs.min.js"></script>
-<script src="js/manette.js"></script>
+<script>
+// Toujours la dernière version (pas de cache) : sinon un téléphone peut garder un vieux code.
+(function () { var v = Date.now(); ['lib/peerjs.min.js', 'js/manette.js'].forEach(function (f) { document.write('<script src="' + f + '?v=' + v + '"><\/script>'); }); })();
+</script>
 </body>
 </html>

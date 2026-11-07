@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="css/console.css">
+<script>document.write('<link rel="stylesheet" href="css/console.css?v=' + Date.now() + '">');</script>
 </head>
 <body>
 <!-- Le canvas sert aux jeux. Le menu est en HTML par-dessus. -->
@@ -64,24 +64,30 @@
 
 <div id="toast"></div>
 
-<script src="lib/peerjs.min.js"></script>
-<script src="lib/qrcode.js"></script>
-<script src="js/console.js"></script>
-<!-- Les jeux du catalogue : ajouter une ligne par nouveau jeu -->
-<script src="jeux/fiesta/outils.js"></script>
-<script src="jeux/fiesta/plateau.js"></script>
-<script src="jeux/fiesta/minijeux.js"></script>
-<script src="jeux/fiesta/fiesta.js"></script>
-<script src="jeux/commun/lien.js"></script>
-<script src="jeux/quiz/questions.js"></script>
-<script src="jeux/quiz/quiz.js"></script>
-<script src="jeux/dino/dino.js"></script>
-<script src="jeux/magnats/magnats.js"></script>
-<script src="jeux/archers/archers.js"></script>
-<script src="jeux/commun/cartes.js"></script>
-<script src="jeux/rami/rami.js"></script>
-<script src="jeux/poker/poker.js"></script>
-<script src="jeux/test-manettes.js"></script>
+<script>
+// Chaque fichier est chargé avec ?v=… pour ne jamais tomber sur une vieille version gardée en cache.
+// Les jeux du catalogue : ajouter une ligne par nouveau jeu.
+(function () {
+  var v = Date.now();
+  ['lib/peerjs.min.js',
+   'lib/qrcode.js',
+   'js/console.js',
+   'jeux/fiesta/outils.js',
+   'jeux/fiesta/plateau.js',
+   'jeux/fiesta/minijeux.js',
+   'jeux/fiesta/fiesta.js',
+   'jeux/commun/lien.js',
+   'jeux/quiz/questions.js',
+   'jeux/quiz/quiz.js',
+   'jeux/dino/dino.js',
+   'jeux/magnats/magnats.js',
+   'jeux/archers/archers.js',
+   'jeux/commun/cartes.js',
+   'jeux/poker/poker.js',
+   'jeux/test-manettes.js'
+  ].forEach(function (f) { document.write('<script src="' + f + '?v=' + v + '"><\/script>'); });
+})();
+</script>
 <script>Console.demarrer();</script>
 </body>
 </html>

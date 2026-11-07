@@ -1,6 +1,7 @@
 /* Manette sur le téléphone : profil, menu (catalogue + réglages), pad en jeu. */
 (function () {
   'use strict';
+  var VERSION = 8; // doit être égal à VERSION dans js/console.js
 
   function $(id) { return document.getElementById(id); }
   function lire(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -353,6 +354,12 @@
     c.on('data', function (m) {
       if (!m || c !== conn) return;
       if (m.t === 'bienvenue') {
+        // La télé a une autre version : on recharge la page (une seule fois par version) pour prendre le nouveau code.
+        if (m.version && m.version !== VERSION && lire('jeutele-recharge') !== String(m.version)) {
+          ecrire('jeutele-recharge', String(m.version));
+          location.reload();
+          return;
+        }
         moi = m;
         message('');
         if (m.couleurs) couleurs = m.couleurs;
