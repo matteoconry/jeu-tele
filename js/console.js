@@ -212,19 +212,20 @@ var Console = (function () {
 
     $('menu').className = 'cache';
     $('nomJeu').textContent = (def.emoji || '') + ' ' + def.nom;
-    $('barreJeu').className = 'visible';
+    $('barreJeu').className = def.barre === false ? '' : 'visible';
     son(520, 0.1); setTimeout(function () { son(780, 0.18); }, 110);
 
-    var inst = def.creer(api);
-    jeuEnCours = { def: def, inst: inst || {} };
+    // D'abord dire aux téléphones qu'on passe en jeu, ensuite créer le jeu (qui peut déjà leur écrire).
+    jeuEnCours = { def: def, inst: {} };
     diffuser(ecranJeu());
+    jeuEnCours.inst = def.creer(api) || {};
     if (parQui) toast(parQui.nom + ' lance ' + def.nom);
     majTout();
   }
 
   function ecranJeu() {
     var d = jeuEnCours.def;
-    return { t: 'ecran', ecran: 'jeu', jeu: { id: d.id, nom: d.nom, emoji: d.emoji }, boutons: d.boutons || ['A'] };
+    return { t: 'ecran', ecran: 'jeu', jeu: { id: d.id, nom: d.nom, emoji: d.emoji }, boutons: d.boutons || ['A'], perso: !!d.perso };
   }
 
   function retourMenu() {
@@ -341,13 +342,21 @@ var Console = (function () {
   document.addEventListener('click', function () { if (!estPleinEcran() && pleinEcranPossible()) passerPleinEcran(); });
 
   // ---------- Télécommande Samsung / clavier ----------
+  var dernierRetour = 0;
   // Flèches + OK dans le menu ; Retour (10009) ou Échap pour quitter un jeu.
   document.addEventListener('keydown', function (e) {
     var k = e.keyCode;
     // Premier OK sur la télécommande : plein écran (le suivant lance le jeu).
     if (k === 13 && !estPleinEcran() && pleinEcranPossible()) { e.preventDefault(); passerPleinEcran(); return; }
     if (jeuEnCours) {
-      if (k === 10009 || k === 27 || k === 8) { e.preventDefault(); retourMenu(); }
+      if (k === 10009 || k === 27 || k === 8) {
+        e.preventDefault();
+        // Double appui pour éviter de quitter une partie par erreur.
+        var t = Date.now();
+        if (t - dernierRetour < 2500) { dernierRetour = 0; retourMenu(); }
+        else { dernierRetour = t; toast('Appuie encore sur Retour pour quitter la partie'); }
+      }
+      if (jeuEnCours && jeuEnCours.inst.touche) jeuEnCours.inst.touche(k);
       return;
     }
     var n = jeux.length;

@@ -128,19 +128,83 @@
   });
 
   // ---------- Jeu ----------
+  // Deux modes : la manette classique (croix + boutons), ou un écran « perso » envoyé par le jeu
+  // ({t:'ui', ui:{titre, texte, emoji, boutons, mode, disposition, pad, stats, cle}}).
   var boutonsActuels = '';
+  var dernierUI = null;
+
   function remplirJeu(e) {
-    $('nomJeu').textContent = (e.jeu.emoji || '') + ' ' + e.jeu.nom;
-    var liste = (e.boutons || ['A']).join(',');
-    if (liste !== boutonsActuels) {
-      boutonsActuels = liste;
-      $('boutons').innerHTML = (e.boutons || ['A']).map(function (b, i) {
-        return '<div class="bouton' + (i ? ' b2' : '') + '" data-b="' + echapper(b) + '">' + echapper(b) + '</div>';
-      }).join('');
-      $('boutons').querySelectorAll('.bouton').forEach(brancherBouton);
+    var ui = e.perso ? dernierUI : null;
+    var stats = ui && ui.stats;
+    $('nomJeu').innerHTML = stats
+      ? '<b>🐚 ' + stats.pieces + '</b> &nbsp; <b>⭐ ' + stats.etoiles + '</b>' + (stats.rang ? ' &nbsp; ' + echapper(stats.rang) : '')
+      : echapper((e.jeu.emoji || '') + ' ' + e.jeu.nom);
+
+    var avecPad = !e.perso || (ui && ui.pad);
+    $('zone').style.display = avecPad ? '' : 'none';
+    $('perso').style.display = avecPad ? 'none' : '';
+
+    if (avecPad) {
+      var ids = ui && ui.boutons ? ui.boutons.map(function (b) { return b.id; }) : (e.boutons || ['A']);
+      var labels = ui && ui.boutons ? ui.boutons.map(function (b) { return b.label; }) : ids;
+      var liste = ids.join(',') + '|' + labels.join(',');
+      if (liste !== boutonsActuels) {
+        boutonsActuels = liste;
+        $('boutons').innerHTML = ids.map(function (b, i) {
+          return '<div class="bouton' + (i ? ' b2' : '') + '" data-b="' + echapper(b) + '">' + echapper(labels[i]) + '</div>';
+        }).join('');
+        $('boutons').querySelectorAll('.bouton').forEach(brancherBouton);
+      }
+      return;
     }
+    remplirPerso(ui);
   }
-  $('boutonMenu').onclick = function () { envoyer({ t: 'menu' }); };
+
+  var persoRendu; // undefined = rien d'affiché encore
+  function remplirPerso(ui) {
+    if (persoRendu === ui) return; // déjà affiché (évite de casser un appui en cours)
+    persoRendu = ui;
+    if (!ui) { $('perso').innerHTML = '<div class="perso-texte">Prépare-toi…</div>'; return; }
+    var h = '';
+    if (ui.emoji) h += '<div class="perso-emoji">' + ui.emoji + '</div>';
+    if (ui.titre) h += '<div class="perso-titre">' + echapper(ui.titre) + '</div>';
+    if (ui.texte) h += '<div class="perso-texte">' + echapper(ui.texte) + '</div>';
+    if (ui.boutons && ui.boutons.length) {
+      h += '<div class="perso-boutons ' + (ui.disposition || 'colonne') + '">';
+      ui.boutons.forEach(function (b) {
+        h += '<button class="perso-bouton" data-id="' + echapper(b.id) + '"' + (b.desactive ? ' disabled' : '') +
+          (b.couleur ? ' style="background:' + b.couleur + '"' : '') + '>' + echapper(b.label) +
+          (b.sous ? '<small>' + echapper(b.sous) + '</small>' : '') + '</button>';
+      });
+      h += '</div>';
+    }
+    $('perso').innerHTML = h;
+    $('perso').style.background = ui.fond || '';
+    if (ui.vibrer) vibrer(ui.vibrer);
+
+    $('perso').querySelectorAll('.perso-bouton').forEach(function (el) {
+      var id = el.getAttribute('data-id');
+      if (ui.mode === 'manette') {
+        el.setAttribute('data-b', id);
+        brancherBouton(el);
+      } else {
+        el.addEventListener('click', function () {
+          if (el.disabled) return;
+          envoyer({ t: 'choix', id: id, cle: ui.cle });
+          vibrer(30);
+          $('perso').querySelectorAll('.perso-bouton').forEach(function (x) {
+            x.disabled = true;
+            if (x === el) x.className += ' choisi';
+          });
+        });
+      }
+    });
+  }
+
+  $('boutonMenu').onclick = function () {
+    if (dernierEcran && dernierEcran.perso && !confirm('Quitter la partie et revenir au menu ?')) return;
+    envoyer({ t: 'menu' });
+  };
 
   function brancherBouton(el) {
     var b = el.getAttribute('data-b');
@@ -263,8 +327,12 @@
         if (profil.nom && m.couleur !== profil.couleur) { profil.couleur = m.couleur; ecrire('jeutele-couleur', m.couleur); }
         vibrer(80);
         afficher();
+      } else if (m.t === 'ui') {
+        dernierUI = m.ui;
+        if (dernierEcran && dernierEcran.ecran === 'jeu') afficher();
       } else if (m.t === 'ecran') {
         if (dernierEcran && dernierEcran.ecran === 'jeu' && m.ecran !== 'jeu') lacherTout();
+        if (m.ecran !== 'jeu') { dernierUI = null; persoRendu = undefined; }
         dernierEcran = m;
         afficher();
       } else if (m.t === 'plein') {

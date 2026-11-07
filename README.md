@@ -7,6 +7,13 @@ Une petite « console » de jeux pour la télé, avec les téléphones comme man
   Pendant un jeu, le bouton ⏸ Menu ramène tout le monde au catalogue.
 - **Télécommande** : flèches + OK pour choisir un jeu, Retour pour quitter un jeu.
 
+## Jeux du catalogue
+- **Fiesta des Îles** (2 à 4 joueurs) : jeu de plateau sur une île. Dé de 1 à 10, cases bonus (+3), pièges (−3),
+  surprises, duels, étoiles de mer à acheter (20 coquillages), un embranchement par le volcan, un mini-jeu à la fin
+  de chaque tour, bonus et podium final. 5 mini-jeux : noix de coco, flamant réflexe, totems, course de crabes, pêche aux perles.
+  Fichiers dans `jeux/fiesta/`. Tout est dessiné et les sons sont synthétisés : aucune image ni fichier audio.
+- **Test des manettes** : chacun déplace son carré.
+
 ## Organisation des fichiers
 - `index.html`, `js/console.js`, `css/console.css` : la console télé (salle PeerJS, joueurs, menu, réglages).
 - `manette.html`, `js/manette.js`, `css/manette.css` : la manette téléphone.
