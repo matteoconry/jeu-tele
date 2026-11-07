@@ -1,7 +1,7 @@
 /* Manette sur le téléphone : profil, menu (catalogue + réglages), pad en jeu. */
 (function () {
   'use strict';
-  var VERSION = 8; // doit être égal à VERSION dans js/console.js
+  var VERSION = 9; // doit être égal à VERSION dans js/console.js
 
   function $(id) { return document.getElementById(id); }
   function lire(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -180,6 +180,12 @@
       });
       h += '</div>';
     }
+    if (ui.dessin) {
+      h += '<canvas class="perso-dessin"></canvas><div class="perso-palette">' +
+        (ui.dessin.couleurs || ['#1b1b2f', '#e63946', '#fb8500', '#ffd166', '#06d6a0', '#118ab2', '#8338ec', '#ff70a6', '#8d5524', '#ffffff']).map(function (c) {
+          return '<button class="pastille-c" data-c="' + c + '" style="background:' + c + '"></button>';
+        }).join('') + '<button class="outil" data-o="gros">●</button><button class="outil" data-o="annuler">↶</button><button class="outil" data-o="effacer">🗑</button></div>';
+    }
     if (ui.boutons && ui.boutons.length) {
       h += '<div class="perso-boutons ' + (ui.disposition || 'colonne') + '">';
       ui.boutons.forEach(function (b) {
@@ -203,6 +209,7 @@
         x.disabled = (mi !== null && n < +mi) || (ma !== null && n > +ma);
       });
     }
+    if (ui.dessin) brancherDessin(ui);
     if (cartes && cartes.choix) {
       $('perso').querySelectorAll('.carte').forEach(function (el) {
         el.addEventListener('click', function () {
@@ -233,6 +240,55 @@
         });
       }
     });
+  }
+
+  // Zone de dessin : chaque trait est envoyé à la télé en coordonnées 0..1.
+  function brancherDessin(ui) {
+    var cv = $('perso').querySelector('.perso-dessin'), cx = cv.getContext('2d');
+    var cote = Math.min($('perso').clientWidth - 36, window.innerHeight * 0.5, 520);
+    var r = window.devicePixelRatio || 1;
+    cv.style.width = cv.style.height = cote + 'px';
+    cv.width = cv.height = Math.round(cote * r);
+    var traits = [], courant = null, couleur = '#1b1b2f', epais = 0.012;
+    function redessiner() {
+      cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
+      traits.forEach(tracer);
+    }
+    function tracer(t) {
+      cx.strokeStyle = t.c; cx.lineWidth = t.w * cv.width; cx.lineCap = 'round'; cx.lineJoin = 'round';
+      cx.beginPath();
+      t.p.forEach(function (q, i) { var x = q[0] * cv.width, y = q[1] * cv.height; if (i) cx.lineTo(x, y); else cx.moveTo(x, y); });
+      if (t.p.length === 1) cx.lineTo(t.p[0][0] * cv.width + 0.1, t.p[0][1] * cv.height);
+      cx.stroke();
+    }
+    function point(e) {
+      var b = cv.getBoundingClientRect(), s = e.touches ? e.touches[0] : e;
+      return [Math.round(F_borne((s.clientX - b.left) / b.width) * 1000) / 1000, Math.round(F_borne((s.clientY - b.top) / b.height) * 1000) / 1000];
+    }
+    function F_borne(v) { return Math.max(0, Math.min(1, v)); }
+    function debut(e) { e.preventDefault(); courant = { c: couleur, w: epais, p: [point(e)] }; traits.push(courant); tracer(courant); }
+    function bouge(e) { if (!courant) return; e.preventDefault(); var q = point(e), d = courant.p[courant.p.length - 1]; if (Math.abs(q[0] - d[0]) + Math.abs(q[1] - d[1]) < 0.004) return; courant.p.push(q); redessinerDernier(); }
+    function redessinerDernier() { var n = courant.p.length; tracer({ c: courant.c, w: courant.w, p: courant.p.slice(Math.max(0, n - 2)) }); }
+    function fin(e) { if (!courant) return; if (e) e.preventDefault(); envoyer({ t: 'trait', cle: ui.cle, trait: courant }); courant = null; }
+    cv.addEventListener('touchstart', debut, { passive: false });
+    cv.addEventListener('touchmove', bouge, { passive: false });
+    cv.addEventListener('touchend', fin, { passive: false });
+    cv.addEventListener('mousedown', debut);
+    cv.addEventListener('mousemove', bouge);
+    window.onmouseup = function () { fin(); };
+    $('perso').querySelectorAll('.pastille-c').forEach(function (b) {
+      b.onclick = function () { couleur = b.getAttribute('data-c'); $('perso').querySelectorAll('.pastille-c').forEach(function (x) { x.classList.toggle('active', x === b); }); };
+    });
+    $('perso').querySelectorAll('.outil').forEach(function (b) {
+      b.onclick = function () {
+        var o = b.getAttribute('data-o');
+        if (o === 'gros') { epais = epais === 0.012 ? 0.03 : epais === 0.03 ? 0.006 : 0.012; b.textContent = epais === 0.03 ? '⬤' : epais === 0.006 ? '·' : '●'; }
+        else if (o === 'annuler') { traits.pop(); redessiner(); envoyer({ t: 'annuler', cle: ui.cle }); }
+        else if (o === 'effacer') { traits = []; redessiner(); envoyer({ t: 'effacer', cle: ui.cle }); }
+      };
+    });
+    var premiere = $('perso').querySelector('.pastille-c'); if (premiere) premiere.classList.add('active');
+    redessiner();
   }
 
   $('boutonMenu').onclick = function () {

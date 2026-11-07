@@ -20,6 +20,7 @@ Une petite « console » de jeux pour la télé, avec les téléphones comme man
 - **Duel d'Archers** (1 ou 2 joueurs) : duel de stickmen à l'arc, chacun son tour, avec le vent. 5 cartes avec obstacles, tir à la tête = gros dégâts, 2 manches gagnantes. Seul, on affronte Robin le robot (3 niveaux).
 - **Poker** (2 à 4 joueurs) : Texas Hold'em avec des jetons pour rire. Cartes cachées sur le téléphone, blindes qui doublent toutes les 6 mains, relances, tapis, pots partagés.
 - **Turbo Karts** (1 à 4 joueurs) : course de karts en fausse 3D, écran partagé, 6 pilotes (l'ordinateur complète). 3 circuits (Ville Néon, Montagne Enneigée, Canyon Rouge), objets (turbo, huile, missile, bouclier), plaques turbo, Grand Prix.
+- **Le Défi Dessin** (2 à 4 joueurs) : un mot, tout le monde le dessine sur son téléphone en 60 s, les dessins sont dévoilés à la télé et chacun vote pour le meilleur (pas le sien).
 - **Test des manettes** : chacun déplace son carré.
 
 ## Organisation des fichiers
