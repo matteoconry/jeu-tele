@@ -97,9 +97,21 @@ var Console = (function () {
       var place = -1, i;
 
       for (i = 0; i < joueurs.length; i++) if (joueurs[i] && joueurs[i].idTel === idTel) place = i;
+      // Même prénom qu'un joueur parti ou muet (autre navigateur sur le même téléphone, page rouverte…) : on reprend sa place.
+      if (place === -1 && meta.nom) {
+        var cle = cleNom(meta.nom);
+        for (i = 0; i < joueurs.length; i++) {
+          var x = joueurs[i];
+          if (x && cleNom(x.nom) === cle && (!x.conn || Date.now() - x.vu > 3000)) { place = i; break; }
+        }
+      }
       if (place === -1) {
         // Une place libre parmi les places autorisées (jamais utilisée, ou joueur parti).
         for (i = 0; i < params.maxJoueurs; i++) if (!joueurs[i] || !joueurs[i].conn) { place = i; break; }
+      }
+      // Salle pleine : on prend la place d'un téléphone muet depuis plus de 3 s (connexion morte).
+      if (place === -1) {
+        for (i = 0; i < params.maxJoueurs; i++) if (joueurs[i] && Date.now() - joueurs[i].vu > 3000) { place = i; break; }
       }
       if (place === -1) {
         conn.send({ t: 'plein', max: params.maxJoueurs });
@@ -108,10 +120,10 @@ var Console = (function () {
       }
 
       var ancien = joueurs[place];
-      if (ancien && ancien.conn && ancien.conn !== conn) { try { ancien.conn.close(); } catch (e) {} }
+      if (ancien && ancien.conn && ancien.conn !== conn) { var vieux = ancien.conn; ancien.conn = null; try { vieux.close(); } catch (e) {} }
       var numero = place + 1;
       var j = {
-        numero: numero, idTel: idTel, conn: conn, ping: null,
+        numero: numero, idTel: idTel, conn: conn, ping: null, vu: Date.now(),
         nom: nettoyerNom(meta.nom || (ancien && ancien.nom), numero),
         couleur: couleurLibre(meta.couleur || (ancien && ancien.couleur), numero)
       };
@@ -135,13 +147,30 @@ var Console = (function () {
   function depart(j, conn) {
     if (j.conn !== conn) return;
     j.conn = null;
+    try { conn.close(); } catch (e) {}
     toast(j.nom + ' est déconnecté');
     if (jeuEnCours && jeuEnCours.inst.depart) jeuEnCours.inst.depart(j);
+    nettoyerPartis();
     majTout();
   }
+  function cleNom(n) { return String(n || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  // Hors partie, un joueur déconnecté libère sa ligne (pendant une partie on le garde pour qu'il puisse revenir).
+  function nettoyerPartis() {
+    if (jeuEnCours) return;
+    for (var i = 0; i < joueurs.length; i++) if (joueurs[i] && !joueurs[i].conn) joueurs[i] = null;
+  }
+  // Un téléphone envoie un ping toutes les 2 s : sans nouvelles depuis 7 s, il est parti (écran éteint, onglet fermé…).
+  setInterval(function () {
+    var t = Date.now();
+    for (var i = 0; i < joueurs.length; i++) {
+      var j = joueurs[i];
+      if (j && j.conn && t - j.vu > 7000) depart(j, j.conn);
+    }
+  }, 1000);
 
   function recevoir(j, conn, m) {
     if (j.conn !== conn || !m || typeof m !== 'object') return;
+    j.vu = Date.now();
     switch (m.t) {
       case 'ping':
         envoyer(j, { t: 'pong', ts: m.ts });
@@ -233,6 +262,7 @@ var Console = (function () {
       try { if (jeuEnCours.inst.fin) jeuEnCours.inst.fin(); } catch (e) { console.error(e); }
       jeuEnCours = null;
     }
+    nettoyerPartis();
     $('menu').className = '';
     $('barreJeu').className = '';
     var ctx = canvas.getContext('2d');

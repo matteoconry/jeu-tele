@@ -321,6 +321,7 @@
       if (!m || c !== conn) return;
       if (m.t === 'bienvenue') {
         moi = m;
+        message('');
         if (m.couleurs) couleurs = m.couleurs;
         $('monNom').textContent = m.nom;
         document.documentElement.style.setProperty('--couleur', m.couleur);
@@ -337,7 +338,10 @@
         afficher();
       } else if (m.t === 'plein') {
         refuse = true;
-        message('La partie est complète (' + m.max + ' joueurs max). On peut augmenter la limite dans les réglages.');
+        message('La partie est complète (' + m.max + ' joueurs max). On peut augmenter la limite dans les réglages. Nouvel essai dans quelques secondes…');
+        // On réessaie : une place peut se libérer (téléphone parti, limite augmentée).
+        clearTimeout(minuterieReco);
+        minuterieReco = setTimeout(function () { refuse = false; essais = 0; connecter(); }, 5000);
       } else if (m.t === 'pong') {
         dernierPing = performance.now() - m.ts;
         etat('Connecté · ' + Math.round(dernierPing) + ' ms');
