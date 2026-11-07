@@ -16,7 +16,7 @@
 <!-- ===== Écran menu ===== -->
 <div id="menu">
   <header>
-    <div class="logo">🌴 Jeu télé</div>
+    <div class="logo"><span class="manette">🎮</span><span><span class="l1">Jeu</span> <span class="l2">télé</span></span></div>
     <div class="droite">
       <div id="etat">Connexion au serveur…</div>
       <button id="pleinEcran">⛶ Plein écran</button>
@@ -41,6 +41,7 @@
       <div class="carte" id="carteCatalogue">
         <h2>Catalogue</h2>
         <div id="catalogue"></div>
+        <div id="detail"></div>
         <div class="aide">Choisis un jeu sur ton téléphone (ou avec les flèches de la télécommande puis OK).</div>
       </div>
       <div class="carte" id="carteParams">
@@ -84,6 +85,7 @@
    'jeux/archers/archers.js',
    'jeux/commun/cartes.js',
    'jeux/poker/poker.js',
+   'jeux/kart/rendu3d.js',
    'jeux/kart/kart.js',
    'jeux/dessin/dessin.js',
    'jeux/test-manettes.js'

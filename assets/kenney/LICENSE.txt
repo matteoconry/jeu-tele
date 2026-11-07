@@ -1,0 +1,7 @@
+Modèles 3D de Kenney (www.kenney.nl), tirés des « Starter Kits » publiés sur github.com/KenneyNL.
+
+License: Creative Commons Zero, CC0 1.0 Universal
+http://creativecommons.org/publicdomain/zero/1.0/
+
+You may use these assets in personal and commercial projects.
+Credit (Kenney or www.kenney.nl) would be nice but is not mandatory.
