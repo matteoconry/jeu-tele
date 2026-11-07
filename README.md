@@ -15,6 +15,8 @@ Une petite « console » de jeux pour la télé, avec les téléphones comme man
 - **Le Grand Quiz** (1 à 4 joueurs) : culture générale, 145 questions dans 8 thèmes (`jeux/quiz/questions.js`, facile à enrichir).
   Réponse secrète sur le téléphone, 15 s par question, points selon la rapidité et bonus de série.
 - **Dino Sprint** (1 à 4 joueurs) : course sans fin, un couloir par joueur, mêmes obstacles pour tous.
+- **Magnats des Îles** (2 à 4 joueurs) : jeu de plateau original sur une île. On achète des lieux, on construit villas et palais, on encaisse les loyers. Bouteilles à la mer, île déserte, faillite. Fin après 12 ou 20 tours, ou jusqu'à la ruine.
+- **Duel d'Archers** (1 ou 2 joueurs) : duel de stickmen à l'arc, chacun son tour, avec le vent. 5 cartes avec obstacles, tir à la tête = gros dégâts, 2 manches gagnantes. Seul, on affronte Robin le robot (3 niveaux).
   Sauter (garder appuyé = plus haut), se baisser, ramasser les œufs dorés, 3 vies. Record sauvegardé sur la télé.
 - **Test des manettes** : chacun déplace son carré.
 
