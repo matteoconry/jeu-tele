@@ -8,7 +8,6 @@ var KartRendu = (function () {
 
   var K = 20;          // 1 unité Kenney = 20 unités du monde
   var T = 10 * K;      // une case de circuit = une tuile Kenney de 10 × 10
-  var DOSSIER = 'assets/kenney/';
   var MODELES = {
     course: ['track-straight', 'track-corner', 'track-finish', 'decoration-forest', 'decoration-tents', 'decoration-empty',
       'vehicle-truck-red', 'vehicle-truck-yellow', 'vehicle-truck-green', 'vehicle-truck-purple', 'vehicle-motorcycle'],
@@ -17,114 +16,22 @@ var KartRendu = (function () {
     plateforme: ['block-coin', 'cloud', 'flag'],
     arene: ['column', 'column-damaged', 'statue', 'tree', 'banner', 'wall', 'wall-gate', 'floor', 'floor-detail', 'bricks', 'trophy']
   };
-  var M = {};          // modèles chargés : M['course/track-straight'] = Object3D
   var pret = null;     // promesse de chargement
-  var R = null;        // WebGLRenderer
+  var R = null;        // WebGLRenderer (partagé, voir jeux/commun/kenney3d.js)
   var glCanvas = null;
   var qualite = 0.75;  // fraction de la résolution 1600 × 900 (ajustée selon la vitesse de la télé)
   var mesures = [];
 
-  function charger(src) {
-    return new Promise(function (ok, ko) {
-      var s = document.createElement('script');
-      s.src = src + '?v=' + Date.now();
-      s.onload = ok; s.onerror = function () { ko(new Error('script ' + src)); };
-      document.head.appendChild(s);
-    });
-  }
-
-  // remplace les matériaux PBR par du Lambert, beaucoup moins lourd pour la télé
-  // (un seul matériau par kit : tous les modèles d'un kit partagent la même palette de couleurs)
-  var materiaux = {};
-  function simplifier(obj, kit) {
-    obj.traverse(function (o) {
-      if (!o.isMesh) return;
-      var m = o.material;
-      if (m.map && !materiaux[kit]) {
-        m.map.encoding = THREE.sRGBEncoding;
-        materiaux[kit] = new THREE.MeshLambertMaterial({ map: m.map });
-      }
-      o.material = m.map ? materiaux[kit] : new THREE.MeshLambertMaterial({ color: m.color });
-    });
-    return obj;
-  }
-
   function preparer() {
     if (pret) return pret;
-    pret = (window.THREE ? Promise.resolve() : charger('lib/three.min.js'))
-      .then(function () { return THREE.GLTFLoader ? null : charger('lib/three-gltf.js'); })
-      .then(function () {
-        var L = new THREE.GLTFLoader(), liste = [];
-        Object.keys(MODELES).forEach(function (kit) {
-          MODELES[kit].forEach(function (n) {
-            liste.push(new Promise(function (ok) {
-              L.load(DOSSIER + kit + '/' + n + '.glb', function (g) { M[kit + '/' + n] = simplifier(g.scene, kit); ok(); },
-                null, function (e) { console.warn('Modèle manquant', n, e); ok(); });
-            }));
-          });
-        });
-        return Promise.all(liste);
-      })
-      .then(function () {
-        glCanvas = document.createElement('canvas');
-        R = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: false, powerPreference: 'high-performance' });
-        R.outputEncoding = THREE.sRGBEncoding;
-        R.setPixelRatio(1);
-        R.setScissorTest(true);
-        R.autoClear = false;
-      });
+    var noms = [];
+    Object.keys(MODELES).forEach(function (kit) { MODELES[kit].forEach(function (n) { noms.push(kit + '/' + n); }); });
+    pret = Kenney3D.charger(noms).then(function () { R = Kenney3D.renderer(); glCanvas = Kenney3D.canvas(); });
     return pret;
   }
 
-  function copie(nom, echelle) {
-    var o = M[nom];
-    if (!o) return new THREE.Object3D();
-    o = o.clone();
-    if (echelle) o.scale.setScalar(echelle);
-    return o;
-  }
+  function copie(nom, echelle) { return Kenney3D.copie(nom, echelle); }
 
-  // ---------- Couleurs des véhicules ----------
-  // Le camion rouge recoloré dans la couleur du joueur (on décale la teinte des pixels rouges de la palette).
-  var textures = {};
-  function hsl(r, g, b) {
-    r /= 255; g /= 255; b /= 255;
-    var mx = Math.max(r, g, b), mn = Math.min(r, g, b), h = 0, s = 0, l = (mx + mn) / 2, d = mx - mn;
-    if (d) {
-      s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
-      h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
-      h /= 6;
-    }
-    return [h, s, l];
-  }
-  function rgb(h, s, l) {
-    function f(p, q, t) { if (t < 0) t += 1; if (t > 1) t -= 1; if (t < 1 / 6) return p + (q - p) * 6 * t; if (t < 1 / 2) return q; if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6; return p; }
-    if (!s) return [l * 255, l * 255, l * 255];
-    var q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
-    return [f(p, q, h + 1 / 3) * 255, f(p, q, h) * 255, f(p, q, h - 1 / 3) * 255];
-  }
-  function textureCouleur(couleur) {
-    if (textures[couleur]) return textures[couleur];
-    var base = null;
-    M['course/vehicle-truck-red'].traverse(function (o) { if (o.isMesh && o.material.map && !base) base = o.material.map.image; });
-    var cv = document.createElement('canvas'); cv.width = base.width; cv.height = base.height;
-    var c = cv.getContext('2d'); c.drawImage(base, 0, 0);
-    var img = c.getImageData(0, 0, cv.width, cv.height), d = img.data;
-    var x = couleur.replace('#', ''), cible = hsl(parseInt(x.substr(0, 2), 16), parseInt(x.substr(2, 2), 16), parseInt(x.substr(4, 2), 16));
-    for (var i = 0; i < d.length; i += 4) {
-      var h = hsl(d[i], d[i + 1], d[i + 2]);
-      if (h[1] < 0.45 || (h[0] > 0.06 && h[0] < 0.93)) continue; // seulement les rouges
-      var l = Math.max(0.18, Math.min(0.82, h[2] + (cible[2] - 0.5) * 0.7));
-      var n = rgb(cible[0], Math.max(0.35, cible[1]), l);
-      d[i] = n[0]; d[i + 1] = n[1]; d[i + 2] = n[2];
-    }
-    c.putImageData(img, 0, 0);
-    var t = new THREE.CanvasTexture(cv);
-    t.encoding = THREE.sRGBEncoding; t.flipY = false;
-    t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter;
-    textures[couleur] = t;
-    return t;
-  }
 
   var MODELE_ROBOT = { '#f6c90e': 'vehicle-truck-yellow', '#3bb273': 'vehicle-truck-green', '#9b5de5': 'vehicle-truck-purple', '#e63946': 'vehicle-truck-red', '#00b4d8': 'moto' };
   function vehicule(couleur, humain) {
@@ -132,9 +39,7 @@ var KartRendu = (function () {
     if (!humain && MODELE_ROBOT[couleur] === 'moto') corps = copie('course/vehicle-motorcycle', K * 1.25);
     else if (!humain && MODELE_ROBOT[couleur]) corps = copie('course/' + MODELE_ROBOT[couleur], K);
     else {
-      corps = copie('course/vehicle-truck-red', K);
-      var tex = textureCouleur(couleur);
-      corps.traverse(function (o) { if (o.isMesh) { o.material = o.material.clone(); o.material.map = tex; } });
+      corps = Kenney3D.recolorer(copie('course/vehicle-truck-red', K), couleur);
     }
     corps.position.y = 0.3 * K;
     g.add(corps);
