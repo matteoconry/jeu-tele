@@ -12,6 +12,10 @@ Une petite « console » de jeux pour la télé, avec les téléphones comme man
   surprises, duels, étoiles de mer à acheter (20 coquillages), un embranchement par le volcan, un mini-jeu à la fin
   de chaque tour, bonus et podium final. 5 mini-jeux : noix de coco, flamant réflexe, totems, course de crabes, pêche aux perles.
   Fichiers dans `jeux/fiesta/`. Tout est dessiné et les sons sont synthétisés : aucune image ni fichier audio.
+- **Le Grand Quiz** (1 à 4 joueurs) : culture générale, 145 questions dans 8 thèmes (`jeux/quiz/questions.js`, facile à enrichir).
+  Réponse secrète sur le téléphone, 15 s par question, points selon la rapidité et bonus de série.
+- **Dino Sprint** (1 à 4 joueurs) : course sans fin, un couloir par joueur, mêmes obstacles pour tous.
+  Sauter (garder appuyé = plus haut), se baisser, ramasser les œufs dorés, 3 vies. Record sauvegardé sur la télé.
 - **Test des manettes** : chacun déplace son carré.
 
 ## Organisation des fichiers

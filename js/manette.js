@@ -136,7 +136,7 @@
   function remplirJeu(e) {
     var ui = e.perso ? dernierUI : null;
     var stats = ui && ui.stats;
-    $('nomJeu').innerHTML = stats
+    $('nomJeu').innerHTML = stats && stats.texte ? '<b>' + echapper(stats.texte) + '</b>' : stats
       ? '<b>🐚 ' + stats.pieces + '</b> &nbsp; <b>⭐ ' + stats.etoiles + '</b>' + (stats.rang ? ' &nbsp; ' + echapper(stats.rang) : '')
       : echapper((e.jeu.emoji || '') + ' ' + e.jeu.nom);
 
