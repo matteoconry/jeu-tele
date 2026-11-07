@@ -159,12 +159,12 @@ var Console = (function () {
     if (jeuEnCours) return;
     for (var i = 0; i < joueurs.length; i++) if (joueurs[i] && !joueurs[i].conn) joueurs[i] = null;
   }
-  // Un téléphone envoie un ping toutes les 2 s : sans nouvelles depuis 7 s, il est parti (écran éteint, onglet fermé…).
+  // Un téléphone envoie un ping toutes les 2 s : sans nouvelles depuis 15 s, il est parti (écran éteint, onglet fermé…).
   setInterval(function () {
     var t = Date.now();
     for (var i = 0; i < joueurs.length; i++) {
       var j = joueurs[i];
-      if (j && j.conn && t - j.vu > 7000) depart(j, j.conn);
+      if (j && j.conn && t - j.vu > 15000) depart(j, j.conn);
     }
   }, 1000);
 
