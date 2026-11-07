@@ -3,246 +3,67 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Jeu télé – écran</title>
-<style>
-  * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; background: #0b3d4f; color: #fff;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
-  #jeu { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
-  #panneau { position: absolute; top: 2vh; right: 2vw; width: 26vw; min-width: 260px;
-    background: rgba(0,0,0,.55); border-radius: 16px; padding: 1.5vw; text-align: center; }
-  #qr { background: #fff; border-radius: 10px; padding: 10px; display: inline-block; }
-  #qr img, #qr canvas { display: block; width: 18vw; min-width: 200px; height: auto; image-rendering: pixelated; }
-  h1 { margin: 0 0 .6em; font-size: 2vw; }
-  .petit { font-size: 1.1vw; opacity: .85; word-break: break-all; margin-top: .6em; }
-  #salle { font-size: 2.6vw; font-weight: bold; letter-spacing: .15em; margin-top: .4em; }
-  #etat { margin-top: .8em; font-size: 1.2vw; }
-  .joueur { display: flex; align-items: center; gap: .6em; justify-content: center;
-    font-size: 1.4vw; margin-top: .4em; }
-  .pastille { width: 1.2em; height: 1.2em; border-radius: 4px; display: inline-block; }
-  .off { opacity: .35; }
-  #cacher { margin-top: .8em; font-size: 1vw; opacity: .7; }
-</style>
+<title>Jeu télé</title>
+<link rel="stylesheet" href="css/console.css">
 </head>
 <body>
+<!-- Le canvas sert aux jeux. Le menu est en HTML par-dessus. -->
 <canvas id="jeu"></canvas>
 
-<div id="panneau">
-  <h1>Scanne pour jouer</h1>
-  <div id="qr">…</div>
-  <div id="salle">----</div>
-  <div class="petit" id="lien"></div>
-  <div id="etat">Connexion au serveur…</div>
-  <div class="joueur off" id="j1"><span class="pastille" style="background:#ff6b35"></span> Joueur 1 : <span>en attente</span></div>
-  <div class="joueur off" id="j2"><span class="pastille" style="background:#4ecdc4"></span> Joueur 2 : <span>en attente</span></div>
-  <div id="cacher">Le panneau se réduit quand les 2 joueurs sont là.</div>
+<!-- ===== Écran menu ===== -->
+<div id="menu">
+  <header>
+    <div class="logo">🌴 Jeu télé</div>
+    <div id="etat">Connexion au serveur…</div>
+  </header>
+
+  <main>
+    <section id="colonneGauche">
+      <div class="carte" id="carteQR">
+        <h2>Rejoindre</h2>
+        <div id="qr">…</div>
+        <div id="salle">-----</div>
+        <div class="petit" id="lien"></div>
+      </div>
+      <div class="carte">
+        <h2>Joueurs <span id="compteJoueurs"></span></h2>
+        <div id="listeJoueurs"></div>
+      </div>
+    </section>
+
+    <section id="colonneDroite">
+      <div class="carte" id="carteCatalogue">
+        <h2>Catalogue</h2>
+        <div id="catalogue"></div>
+        <div class="aide">Choisis un jeu sur ton téléphone (ou avec les flèches de la télécommande puis OK).</div>
+      </div>
+      <div class="carte" id="carteParams">
+        <h2>Paramètres</h2>
+        <div id="params"></div>
+        <div class="aide">Modifiables depuis l'onglet ⚙️ des téléphones.</div>
+      </div>
+    </section>
+  </main>
 </div>
+
+<!-- ===== Barre pendant un jeu ===== -->
+<div id="barreJeu">
+  <div id="miniQR"></div>
+  <div>
+    <div id="nomJeu"></div>
+    <div class="petit">Bouton ⏸ sur le téléphone (ou Retour sur la télécommande) pour revenir au menu</div>
+  </div>
+  <div id="miniJoueurs"></div>
+</div>
+
+<div id="toast"></div>
 
 <script src="lib/peerjs.min.js"></script>
 <script src="lib/qrcode.js"></script>
-<script>
-(function () {
-  'use strict';
-
-  // ---------- Joueurs ----------
-  var COULEURS = ['#ff6b35', '#4ecdc4'];
-  var VITESSE = 0.45; // fraction de la hauteur d'écran par seconde
-  var joueurs = [null, null]; // { conn, idTel, x, y, dx, dy, nom, flash }
-
-  // ---------- Salle ----------
-  // Code de salle court (lettres sans ambiguïté) gardé entre deux rechargements.
-  var PREFIXE = 'jeutele-mc-';
-  var LETTRES = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  function nouveauCode() {
-    var c = '';
-    for (var i = 0; i < 5; i++) c += LETTRES.charAt(Math.floor(Math.random() * LETTRES.length));
-    return c;
-  }
-  var code = null;
-  try { code = localStorage.getItem('jeutele-salle'); } catch (e) {}
-  if (!code) code = nouveauCode();
-
-  var peer = null;
-  var tentatives = 0;
-
-  function etat(txt) { document.getElementById('etat').textContent = txt; }
-
-  function afficherQR() {
-    // Chemin relatif : marche aussi sous matteoconry.github.io/<nom-du-depot>/
-    var url = new URL('manette.html?salle=' + code, location.href).href;
-    var qr = qrcode(0, 'M');
-    qr.addData(url);
-    qr.make();
-    document.getElementById('qr').innerHTML = qr.createImgTag(8, 0);
-    document.getElementById('salle').textContent = code;
-    document.getElementById('lien').textContent = url;
-  }
-
-  function demarrer() {
-    afficherQR();
-    peer = new Peer(PREFIXE + code, window.PEER_OPTS || { debug: 1 });
-
-    peer.on('open', function () {
-      tentatives = 0;
-      try { localStorage.setItem('jeutele-salle', code); } catch (e) {}
-      etat('✅ Salle ouverte. En attente des manettes…');
-    });
-
-    peer.on('connection', accueillir);
-
-    peer.on('disconnected', function () {
-      // Le serveur PeerJS coupe parfois la ligne : on se reconnecte (les manettes déjà branchées restent connectées).
-      tentatives++;
-      etat('Reconnexion au serveur… (essai ' + tentatives + ')');
-      setTimeout(function () { if (peer && !peer.destroyed && peer.disconnected) peer.reconnect(); },
-        Math.min(10000, 1500 * tentatives));
-    });
-
-    peer.on('error', function (err) {
-      console.error(err);
-      if (err.type === 'unavailable-id') {
-        // Code déjà pris (vieille page encore ouverte ?) : on en tire un autre.
-        peer.destroy();
-        code = nouveauCode();
-        demarrer();
-      } else if (err.type === 'network' || err.type === 'server-error' || err.type === 'socket-error' || err.type === 'socket-closed') {
-        etat('⚠️ Problème réseau (' + err.type + '), nouvel essai…');
-      } else if (err.type === 'browser-incompatible') {
-        etat('❌ Ce navigateur ne gère pas WebRTC. Plan B : relais Firebase ou ordi en HDMI.');
-      } else {
-        etat('⚠️ Erreur : ' + err.type);
-      }
-    });
-  }
-
-  function accueillir(conn) {
-    conn.on('open', function () {
-      var meta = conn.metadata || {};
-      var idTel = meta.idTel || conn.peer;
-
-      // Même téléphone qui revient → même place. Sinon première place libre.
-      var place = -1;
-      for (var i = 0; i < 2; i++) if (joueurs[i] && joueurs[i].idTel === idTel) place = i;
-      if (place === -1) for (var j = 0; j < 2; j++) if (!joueurs[j] || !joueurs[j].conn) { place = j; break; }
-
-      if (place === -1) {
-        conn.send({ t: 'plein' });
-        setTimeout(function () { conn.close(); }, 500);
-        return;
-      }
-
-      var ancien = joueurs[place];
-      if (ancien && ancien.conn && ancien.conn !== conn) { try { ancien.conn.close(); } catch (e) {} }
-
-      joueurs[place] = {
-        conn: conn, idTel: idTel,
-        x: ancien ? ancien.x : (place === 0 ? 0.35 : 0.55),
-        y: ancien ? ancien.y : 0.5,
-        dx: 0, dy: 0, flash: 0
-      };
-      conn.send({ t: 'bienvenue', numero: place + 1, couleur: COULEURS[place] });
-      majPanneau();
-
-      conn.on('data', function (m) {
-        var p = joueurs[place];
-        if (!p || p.conn !== conn || !m) return;
-        if (m.t === 'dir') { p.dx = clamp(+m.x || 0); p.dy = clamp(+m.y || 0); }
-        else if (m.t === 'action') { p.flash = 1; }
-        else if (m.t === 'ping') { conn.send({ t: 'pong', ts: m.ts }); }
-      });
-      conn.on('close', function () { liberer(place, conn); });
-      conn.on('error', function () { liberer(place, conn); });
-    });
-  }
-
-  function liberer(place, conn) {
-    var p = joueurs[place];
-    if (p && p.conn === conn) { p.conn = null; p.dx = 0; p.dy = 0; majPanneau(); }
-  }
-
-  function clamp(v) { return v > 1 ? 1 : (v < -1 ? -1 : v); }
-
-  function majPanneau() {
-    var n = 0;
-    for (var i = 0; i < 2; i++) {
-      var el = document.getElementById('j' + (i + 1));
-      var ok = joueurs[i] && joueurs[i].conn;
-      if (ok) n++;
-      el.className = 'joueur' + (ok ? '' : ' off');
-      el.lastChild.textContent = ok ? 'connecté ✔' : (joueurs[i] ? 'déconnecté' : 'en attente');
-    }
-    var panneau = document.getElementById('panneau');
-    panneau.style.transform = n === 2 ? 'scale(.55)' : '';
-    panneau.style.transformOrigin = 'top right';
-    if (n === 2) etat('🎮 Les 2 manettes sont connectées !');
-    else if (peer && peer.open) etat('✅ Salle ouverte. ' + n + '/2 manette(s).');
-  }
-
-  // ---------- Dessin ----------
-  var canvas = document.getElementById('jeu');
-  var ctx = canvas.getContext('2d');
-  var W = 0, H = 0;
-  function redim() {
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-  }
-  window.addEventListener('resize', redim);
-  redim();
-
-  var avant = 0;
-  function boucle(t) {
-    var dt = avant ? Math.min(0.05, (t - avant) / 1000) : 0;
-    avant = t;
-
-    ctx.fillStyle = '#0b3d4f';
-    ctx.fillRect(0, 0, W, H);
-    // une petite "île" pour le décor
-    ctx.fillStyle = '#e9d8a6';
-    ctx.beginPath();
-    ctx.ellipse(W * 0.4, H * 0.55, W * 0.3, H * 0.33, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#5a9e4b';
-    ctx.beginPath();
-    ctx.ellipse(W * 0.4, H * 0.55, W * 0.26, H * 0.28, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    var taille = H * 0.08;
-    for (var i = 0; i < 2; i++) {
-      var p = joueurs[i];
-      if (!p) continue;
-      p.x += p.dx * VITESSE * dt * H / W;
-      p.y += p.dy * VITESSE * dt;
-      p.x = Math.max(0, Math.min(1, p.x));
-      p.y = Math.max(0, Math.min(1, p.y));
-      var px = p.x * (W - taille), py = p.y * (H - taille);
-
-      ctx.globalAlpha = p.conn ? 1 : 0.35;
-      if (p.flash > 0) {
-        ctx.fillStyle = '#fff';
-        var g = taille * (0.3 + 0.7 * p.flash);
-        ctx.fillRect(px - g / 2, py - g / 2, taille + g, taille + g);
-        p.flash = Math.max(0, p.flash - dt * 2.5);
-      }
-      ctx.fillStyle = COULEURS[i];
-      ctx.fillRect(px, py, taille, taille);
-      ctx.fillStyle = '#000';
-      ctx.font = 'bold ' + Math.round(taille * 0.55) + 'px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(String(i + 1), px + taille / 2, py + taille / 2);
-      ctx.globalAlpha = 1;
-    }
-    requestAnimationFrame(boucle);
-  }
-  requestAnimationFrame(boucle);
-
-  // ---------- Démarrage ----------
-  if (typeof Peer === 'undefined') {
-    etat('❌ PeerJS ne s\'est pas chargé (lib/peerjs.min.js).');
-  } else {
-    demarrer();
-  }
-})();
-</script>
+<script src="js/console.js"></script>
+<!-- Les jeux du catalogue : ajouter une ligne par nouveau jeu -->
+<script src="jeux/test-manettes.js"></script>
+<script src="jeux/a-venir.js"></script>
+<script>Console.demarrer();</script>
 </body>
 </html>

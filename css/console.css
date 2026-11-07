@@ -1,0 +1,61 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #0b3d4f; color: #fff;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
+#jeu { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+
+/* ---------- Menu ---------- */
+#menu { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 2.5vh 3vw;
+  background: radial-gradient(ellipse at 30% 110%, #1f7a5a 0%, #0b3d4f 55%, #072733 100%); }
+#menu.cache { display: none; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2vh; }
+.logo { font-size: 3.2vw; font-weight: 800; letter-spacing: .02em; }
+#etat { font-size: 1.3vw; opacity: .9; }
+main { flex: 1; display: flex; gap: 2vw; min-height: 0; }
+#colonneGauche { width: 26vw; display: flex; flex-direction: column; gap: 2vh; }
+#colonneDroite { flex: 1; display: flex; flex-direction: column; gap: 2vh; min-width: 0; }
+.carte { background: rgba(0,0,0,.35); border-radius: 1.2vw; padding: 1.4vw 1.6vw; }
+.carte h2 { margin: 0 0 1.2vh; font-size: 1.6vw; font-weight: 700; opacity: .9; }
+#carteQR { text-align: center; }
+#qr { background: #fff; border-radius: .8vw; padding: .7vw; display: inline-block; }
+#qr img { display: block; width: 15vw; height: auto; image-rendering: pixelated; }
+#salle { font-size: 2.6vw; font-weight: 800; letter-spacing: .2em; margin-top: 1vh; }
+.petit { font-size: 1vw; opacity: .75; word-break: break-all; margin-top: .5vh; }
+.aide { font-size: 1vw; opacity: .6; margin-top: 1.2vh; }
+
+#listeJoueurs { display: flex; flex-direction: column; gap: 1vh; }
+.joueur { display: flex; align-items: center; gap: .8vw; font-size: 1.5vw; padding: .6vh .6vw;
+  border-radius: .6vw; background: rgba(255,255,255,.06); }
+.joueur .pastille { width: 2.2vw; height: 2.2vw; border-radius: .5vw; display: flex; align-items: center;
+  justify-content: center; color: #000; font-weight: 800; font-size: 1.2vw; flex: none; }
+.joueur .nom { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.joueur .info { font-size: 1vw; opacity: .7; }
+.joueur.vide { opacity: .35; }
+.joueur.parti { opacity: .5; }
+
+#carteCatalogue { flex: 1; min-height: 0; }
+#catalogue { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2vw; }
+.jeu { background: rgba(255,255,255,.08); border-radius: 1vw; padding: 1.4vw; border: .25vw solid transparent;
+  transition: transform .15s, border-color .15s; }
+.jeu .emoji { font-size: 4vw; line-height: 1; }
+.jeu .titre { font-size: 1.6vw; font-weight: 700; margin-top: 1vh; }
+.jeu .desc { font-size: 1.05vw; opacity: .8; margin-top: .6vh; }
+.jeu .joueurs { font-size: .95vw; opacity: .6; margin-top: 1vh; }
+.jeu.choisi { border-color: #ffd166; transform: scale(1.04); background: rgba(255,209,102,.15); }
+.jeu.indispo { opacity: .45; }
+
+#params { display: flex; gap: 2vw; flex-wrap: wrap; font-size: 1.3vw; }
+#params .param b { color: #ffd166; }
+
+/* ---------- Barre en jeu ---------- */
+#barreJeu { position: absolute; left: 0; right: 0; top: 0; display: none; align-items: center; gap: 1.2vw;
+  padding: .8vh 1.2vw; background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,0)); pointer-events: none; }
+#barreJeu.visible { display: flex; }
+#miniQR { background: #fff; padding: .3vw; border-radius: .4vw; }
+#miniQR img { display: block; width: 5vw; height: auto; image-rendering: pixelated; }
+#nomJeu { font-size: 1.6vw; font-weight: 700; }
+#miniJoueurs { margin-left: auto; display: flex; gap: .8vw; font-size: 1.2vw; }
+#miniJoueurs span { padding: .3vh .7vw; border-radius: .5vw; color: #000; font-weight: 700; }
+
+#toast { position: absolute; left: 50%; top: 11vh; transform: translateX(-50%); background: rgba(0,0,0,.75);
+  padding: 1.2vh 2vw; border-radius: 1vw; font-size: 1.5vw; opacity: 0; transition: opacity .3s; pointer-events: none; }
+#toast.visible { opacity: 1; }
