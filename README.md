@@ -19,6 +19,7 @@ Une petite « console » de jeux pour la télé, avec les téléphones comme man
 - **Magnats des Îles** (2 à 4 joueurs) : jeu de plateau original sur une île. On achète des lieux, on construit villas et palais, on encaisse les loyers. Bouteilles à la mer, île déserte, faillite. Fin après 12 ou 20 tours, ou jusqu'à la ruine.
 - **Duel d'Archers** (1 ou 2 joueurs) : duel de stickmen à l'arc, chacun son tour, avec le vent. 5 cartes avec obstacles, tir à la tête = gros dégâts, 2 manches gagnantes. Seul, on affronte Robin le robot (3 niveaux).
 - **Poker** (2 à 4 joueurs) : Texas Hold'em avec des jetons pour rire. Cartes cachées sur le téléphone, blindes qui doublent toutes les 6 mains, relances, tapis, pots partagés.
+- **Turbo Karts** (1 à 4 joueurs) : course de karts en fausse 3D, écran partagé, 6 pilotes (l'ordinateur complète). 3 circuits (Ville Néon, Montagne Enneigée, Canyon Rouge), objets (turbo, huile, missile, bouclier), plaques turbo, Grand Prix.
 - **Test des manettes** : chacun déplace son carré.
 
 ## Organisation des fichiers
