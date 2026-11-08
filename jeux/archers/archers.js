@@ -52,6 +52,7 @@
 
   function creer(api) {
     F.viderAnims();
+    if (F.prechargerSprites) F.prechargerSprites();
     F.sonActif = function () { return api.params().son !== false; };
     var L = F.creerLien(api);
     var S = {
@@ -372,6 +373,7 @@
         c.fillStyle = k.id === 'volcan' ? 'rgba(60,60,60,.45)' : 'rgba(255,255,255,.75)';
         [[0, 0, 40], [40, -14, 50], [86, 0, 38]].forEach(function (b) { c.beginPath(); c.arc(n.x + b[0] * n.s, n.y + b[1] * n.s, b[2] * n.s, 0, 7); c.fill(); });
       });
+      decor3d(c, k);
       // tours du château (sous le sol)
       if (k.tours) k.tours.forEach(function (t) {
         c.fillStyle = '#6c757d'; c.fillRect(t[0], 520, t[1] - t[0], 380);
@@ -406,6 +408,24 @@
           c.beginPath(); c.moveTo(vx, vy); c.lineTo(vx + Math.sign(S.vent) * 40, vy); c.stroke();
         }
       }
+    }
+
+    // Arrière-plan en modèles 3D Kenney (arbres, colonnes, remparts), posé derrière le terrain
+    var VUE = { taille: 160, angle: 0.4, hauteur: 0.25 };
+    function decor3d(c, k) {
+      var liste = [];
+      if (k.id === 'prairie') for (var i = 0; i < 9; i++) liste.push(['arene/tree', 60 + i * 185 + (i % 2) * 40, 150 + (i % 3) * 30]);
+      else if (k.id === 'foret') for (var j = 0; j < 16; j++) liste.push(['arene/tree', 20 + j * 104 + (j % 3) * 18, 200 + (j % 4) * 40]);
+      else if (k.id === 'falaises') [[90, 130], [250, 170], [1330, 160], [1500, 120]].forEach(function (q) { liste.push(['arene/column', q[0], q[1]]); });
+      else if (k.id === 'chateau') for (var m = 0; m < 12; m++) liste.push(['arene/tree', 330 + m * 85 + (m % 2) * 20, 150 + (m % 3) * 40]);
+      if (!liste.length) return;
+      c.save();
+      if (k.nuit) c.globalAlpha = 0.4;
+      liste.forEach(function (o) {
+        var y = k.tours ? 790 : k.sol(o[1]) + 24;
+        F.dessinerSprite(c, o[0], o[1], y, o[2], VUE);
+      });
+      c.restore();
     }
 
     function obstacle(c, o) {
@@ -614,7 +634,7 @@
   }
 
   Console.ajouterJeu({
-    id: 'archers', nom: 'Duel d\'Archers', emoji: '🏹',
+    id: 'archers', vignette: 'assets/vignettes/archers.jpg', nom: 'Duel d\'Archers', emoji: '🏹',
     description: 'Un contre un (ou contre le robot) : vise, règle ta puissance, attention au vent. Tir à la tête = gros dégâts !',
     min: 1, max: 2, perso: true, barre: false, creer: creer
   });

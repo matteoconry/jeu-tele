@@ -995,7 +995,7 @@
   }
 
   Console.ajouterJeu({
-    id: 'fiesta',
+    id: 'fiesta', vignette: 'assets/vignettes/fiesta.jpg',
     nom: 'Fiesta Royale',
     emoji: '👑',
     description: 'Le grand jeu de plateau du royaume : dé, pièces d\'or, étoiles, duels et mini-jeux !',

@@ -778,7 +778,7 @@
   }
 
   Console.ajouterJeu({
-    id: 'magnats', nom: 'Magnats de la Ville', emoji: '🏙️',
+    id: 'magnats', vignette: 'assets/vignettes/magnats.jpg', nom: 'Magnats de la Ville', emoji: '🏙️',
     description: 'Achète des rues, construis des immeubles, encaisse les loyers. Le plus riche gagne !',
     min: 2, max: 4, perso: true, barre: false, creer: creer
   });
