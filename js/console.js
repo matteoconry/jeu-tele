@@ -12,7 +12,7 @@
 var Console = (function () {
   'use strict';
   // À augmenter à chaque mise en ligne qui touche la manette : un téléphone avec une autre version se recharge tout seul.
-  var VERSION = 9;
+  var VERSION = 10;
 
   var COULEURS = ['#ff6b35', '#4ecdc4', '#ffd166', '#c77dff', '#80ed99', '#ff8fab'];
   var PREFIXE = 'jeutele-mc-';

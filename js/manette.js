@@ -1,7 +1,7 @@
 /* Manette sur le téléphone : profil, menu (catalogue + réglages), pad en jeu. */
 (function () {
   'use strict';
-  var VERSION = 9; // doit être égal à VERSION dans js/console.js
+  var VERSION = 10; // doit être égal à VERSION dans js/console.js
 
   function $(id) { return document.getElementById(id); }
   function lire(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -146,6 +146,7 @@
     $('perso').style.display = avecPad ? 'none' : '';
 
     if (avecPad) {
+      if (window.Volant) Volant.arreter();
       var ids = ui && ui.boutons ? ui.boutons.map(function (b) { return b.id; }) : (e.boutons || ['A']);
       var labels = ui && ui.boutons ? ui.boutons.map(function (b) { return b.label; }) : ids;
       var liste = ids.join(',') + '|' + labels.join(',');
@@ -165,6 +166,9 @@
   function remplirPerso(ui) {
     if (persoRendu === ui) return; // déjà affiché (évite de casser un appui en cours)
     persoRendu = ui;
+    // Volant pour les jeux de course (js/volant.js).
+    if (ui && ui.volant && window.Volant) { $('perso').style.background = ui.fond || ''; Volant.afficher($('perso'), ui, envoyer, vibrer); return; }
+    if (window.Volant) Volant.arreter();
     if (!ui) { $('perso').innerHTML = '<div class="perso-texte">Prépare-toi…</div>'; return; }
     var h = '';
     if (ui.emoji) h += '<div class="perso-emoji">' + ui.emoji + '</div>';
@@ -429,7 +433,7 @@
         if (dernierEcran && dernierEcran.ecran === 'jeu') afficher();
       } else if (m.t === 'ecran') {
         if (dernierEcran && dernierEcran.ecran === 'jeu' && m.ecran !== 'jeu') lacherTout();
-        if (m.ecran !== 'jeu') { dernierUI = null; persoRendu = undefined; }
+        if (m.ecran !== 'jeu') { dernierUI = null; persoRendu = undefined; if (window.Volant) Volant.arreter(); }
         dernierEcran = m;
         afficher();
       } else if (m.t === 'plein') {
