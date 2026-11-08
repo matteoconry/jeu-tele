@@ -456,7 +456,7 @@
   }
 
   Console.ajouterJeu({
-    id: 'poker', nom: 'Poker', emoji: '♠️',
+    id: 'poker', vignette: 'assets/vignettes/poker.jpg', nom: 'Poker', emoji: '♠️',
     description: 'Texas Hold\'em avec des jetons pour rire : tes cartes cachées sur ton téléphone, bluff et tapis !',
     min: 2, max: 4, perso: true, barre: false, creer: creer
   });

@@ -94,7 +94,7 @@ var Fiesta = window.Fiesta || {};
     c.fillText(txt, x, y);
   };
 
-  // Étoile de mer (la récompense principale).
+  // Étoile dorée (la récompense principale).
   F.etoile = function (c, x, y, r, rot, alpha) {
     c.save();
     c.translate(x, y);
@@ -108,11 +108,11 @@ var Fiesta = window.Fiesta || {};
     }
     c.closePath();
     var g = c.createRadialGradient(0, -r * 0.2, r * 0.1, 0, 0, r);
-    g.addColorStop(0, '#fff3b0'); g.addColorStop(0.45, '#ffb347'); g.addColorStop(1, '#ff6f61');
+    g.addColorStop(0, '#fffbe0'); g.addColorStop(0.45, '#ffd23f'); g.addColorStop(1, '#f4a100');
     c.fillStyle = g;
     c.lineJoin = 'round';
     c.lineWidth = r * 0.14;
-    c.strokeStyle = '#b8432f';
+    c.strokeStyle = '#b86e00';
     c.stroke();
     c.fill();
     // petits points sur les branches
@@ -124,30 +124,70 @@ var Fiesta = window.Fiesta || {};
     c.restore();
   };
 
-  // Coquillage (la monnaie).
+  // ---------- Sprites 3D (modèles Kenney, voir jeux/commun/kenney3d.js) ----------
+  // Chargés en arrière-plan ; tant qu'ils ne sont pas prêts, on dessine la version 2D.
+  var SPRITES = ['plateforme/character', 'plateforme/coin', 'arene/trophy', 'plateforme/block-coin', 'arene/tree', 'plateforme/flag', 'arene/wall', 'arene/column'];
+  var sprites3d = false;
+  F.prechargerSprites = function () {
+    if (!window.Kenney3D) return;
+    Kenney3D.charger(SPRITES).then(function () { sprites3d = true; }).catch(function (e) { console.warn('Sprites 3D indisponibles', e); });
+  };
+  setTimeout(F.prechargerSprites, 1500);
+  F.sprite3d = function (nom, couleur, opts) {
+    if (!sprites3d) return null;
+    return Kenney3D.sprite(nom + (couleur || '') + (opts ? JSON.stringify(opts) : ''), function () {
+      var o = Kenney3D.copie(nom);
+      if (couleur) Kenney3D.recolorer(o, couleur, [0.65, 0.9]);
+      return o;
+    }, opts || { taille: 192, angle: 0.35, hauteur: 0.35 });
+  };
+  // dessine un sprite 3D centré en x, posé sur y (bas), de hauteur h ; renvoie false s'il n'est pas prêt
+  F.dessinerSprite = function (c, nom, x, y, h, opts) {
+    var sp = F.sprite3d(nom, null, opts);
+    if (!sp) return false;
+    var w = h * sp.width / sp.height;
+    c.drawImage(sp, x - w / 2, y - h, w, h);
+    return true;
+  };
+
+  // Décor de prairie partagé par les mini-jeux : ciel, nuages, collines, sapins à l'horizon
+  F.fondPrairie = function (c, opts) {
+    opts = opts || {};
+    var sol = opts.sol === undefined ? 620 : opts.sol;
+    var g = c.createLinearGradient(0, 0, 0, sol);
+    g.addColorStop(0, opts.ciel1 || '#5fb8ff'); g.addColorStop(1, opts.ciel2 || '#cdeeff');
+    c.fillStyle = g; c.fillRect(0, 0, 1600, sol + 2);
+    for (var n = 0; n < 5; n++) {
+      var nx = ((n * 397 + F.t * (8 + n * 3)) % 1900) - 150;
+      var ny = 90 + (n % 3) * 60, nt = 1 + (n % 2) * 0.4;
+      c.fillStyle = 'rgba(255,255,255,.85)';
+      c.beginPath(); c.arc(nx - 40 * nt, ny + 8, 26 * nt, 0, 7); c.arc(nx, ny - 6, 36 * nt, 0, 7); c.arc(nx + 44 * nt, ny + 6, 28 * nt, 0, 7); c.fill();
+      c.fillRect(nx - 40 * nt, ny + 8, 84 * nt, 26 * nt);
+    }
+    c.fillStyle = opts.colline || '#7cc576';
+    c.beginPath(); c.moveTo(0, sol);
+    for (var x = 0; x <= 1600; x += 40) c.lineTo(x, sol - 40 - 30 * Math.sin(x / 210) - 18 * Math.sin(x / 77));
+    c.lineTo(1600, sol); c.fill();
+    for (var t = 0; t < 14; t++) F.dessinerSprite(c, 'arene/tree', 40 + t * 118 + (t % 3) * 20, sol + 8 - (t % 2) * 18, 110 + (t % 3) * 30, { taille: 160, angle: 0.4, hauteur: 0.25 });
+    var gs = c.createLinearGradient(0, sol, 0, 900);
+    gs.addColorStop(0, opts.herbe1 || '#79c26f'); gs.addColorStop(1, opts.herbe2 || '#4f9a55');
+    c.fillStyle = gs; c.fillRect(0, sol, 1600, 900 - sol);
+  };
+
+  // Pièce d'or (la monnaie). Le nom « coquillage » est resté pour ne rien casser.
   F.coquillage = function (c, x, y, r) {
+    var sp = F.sprite3d('plateforme/coin');
+    if (sp) { c.drawImage(sp, x - r * 1.25, y - r * 1.25, r * 2.5, r * 2.5); return; }
     c.save();
     c.translate(x, y);
-    c.beginPath();
-    c.moveTo(-r * 0.25, r * 0.8);
-    c.lineTo(-r, -r * 0.05);
-    c.quadraticCurveTo(-r * 0.9, -r * 0.95, 0, -r);
-    c.quadraticCurveTo(r * 0.9, -r * 0.95, r, -r * 0.05);
-    c.lineTo(r * 0.25, r * 0.8);
-    c.closePath();
-    var g = c.createLinearGradient(0, -r, 0, r);
-    g.addColorStop(0, '#fff7e6'); g.addColorStop(1, '#f7b9a3');
-    c.fillStyle = g;
-    c.fill();
-    c.lineWidth = r * 0.12;
-    c.strokeStyle = '#c97b63';
-    c.stroke();
-    c.lineWidth = r * 0.08;
-    for (var i = -2; i <= 2; i++) {
-      c.beginPath(); c.moveTo(i * 0.08 * r, r * 0.7); c.lineTo(i * 0.42 * r, -r * 0.82); c.stroke();
-    }
+    c.fillStyle = '#c98a00'; c.beginPath(); c.arc(0, r * 0.12, r, 0, 7); c.fill();
+    var g = c.createRadialGradient(-r * 0.3, -r * 0.4, r * 0.1, 0, 0, r);
+    g.addColorStop(0, '#fff3b0'); g.addColorStop(0.5, '#ffd23f'); g.addColorStop(1, '#f4a100');
+    c.fillStyle = g; c.beginPath(); c.arc(0, 0, r, 0, 7); c.fill();
+    c.strokeStyle = 'rgba(184,110,0,.8)'; c.lineWidth = r * 0.14; c.beginPath(); c.arc(0, 0, r * 0.62, 0, 7); c.stroke();
     c.restore();
   };
+  F.piece = F.coquillage;
 
   // Pion : un petit galet vivant avec des yeux.
   F.pion = function (c, x, y, r, couleur, lettre, opts) {
@@ -159,6 +199,17 @@ var Fiesta = window.Fiesta || {};
     c.beginPath(); c.ellipse(x, y + r * 0.85, r * (1 - Math.min(0.4, saut / (r * 6))), r * 0.32, 0, 0, 7); c.fill();
     c.translate(x, y - saut);
     c.scale(1 + ecrase * 0.18, 1 - ecrase * 0.18);
+    var sp = /^#[0-9a-f]{6}$/i.test(couleur) && F.sprite3d('plateforme/character', couleur);
+    if (sp) {
+      // petit personnage 3D à la couleur du joueur
+      var t = r * 3.5;
+      if (opts.triste) c.rotate(0.18);
+      if (opts.regard < 0) c.scale(-1, 1);
+      c.drawImage(sp, -t / 2, r * 1.05 - t * 0.86, t, t);
+      c.restore();
+      if (lettre) F.texte(c, lettre, x, y - saut - r * 1.9, r * 0.7, '#fff', { contour: 'rgba(0,0,0,.6)' });
+      return;
+    }
     // corps
     var g = c.createRadialGradient(-r * 0.35, -r * 0.55, r * 0.1, 0, 0, r * 1.25);
     g.addColorStop(0, '#ffffff'); g.addColorStop(0.18, couleur); g.addColorStop(1, F.assombrir(couleur, 0.45));
@@ -261,7 +312,7 @@ var Fiesta = window.Fiesta || {};
       else if (p.forme === 'confetti') {
         c.save(); c.translate(p.x, p.y); c.rotate(p.rot); c.fillStyle = p.couleur;
         c.fillRect(-p.taille / 2, -p.taille / 4, p.taille, p.taille / 2); c.restore();
-      } else if (p.forme === 'coquillage') F.coquillage(c, p.x, p.y, p.taille);
+      } else if (p.forme === 'coquillage' || p.forme === 'piece') F.coquillage(c, p.x, p.y, p.taille);
       else { c.fillStyle = p.couleur; c.beginPath(); c.arc(p.x, p.y, p.taille * (0.5 + a / 2), 0, 7); c.fill(); }
     }
     c.globalAlpha = 1;

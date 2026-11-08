@@ -1,20 +1,28 @@
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; background: #0b3d4f; color: #fff;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
+html, body { margin: 0; height: 100%; background: #12142b; color: #fff;
+  font-family: "Fredoka", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
 #jeu { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
 
 /* ---------- Menu ---------- */
 #menu { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 2.5vh 3vw;
-  background: radial-gradient(ellipse at 30% 110%, #1f7a5a 0%, #0b3d4f 55%, #072733 100%); }
+  background:
+    repeating-linear-gradient(135deg, rgba(255,255,255,.025) 0 2px, transparent 2px 28px),
+    radial-gradient(ellipse at 15% -10%, #3a3f9e 0%, rgba(58,63,158,0) 55%),
+    radial-gradient(ellipse at 100% 110%, #7a2e6e 0%, rgba(122,46,110,0) 50%),
+    linear-gradient(160deg, #1b1e45 0%, #12142b 60%, #0c0d1f 100%); }
 #menu.cache { display: none; }
 header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2vh; }
-.logo { font-size: 3.2vw; font-weight: 800; letter-spacing: .02em; }
+.logo { font-size: 3.2vw; font-weight: 700; letter-spacing: .04em; display: flex; align-items: center; gap: .8vw; }
+.logo .manette { width: 4.2vw; height: 4.2vw; border-radius: 1vw; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(145deg, #ff5d73, #ff9f1c); box-shadow: 0 .4vw 0 #b8323f; font-size: 2.6vw; }
+.logo .l1 { color: #ffd166; } .logo .l2 { color: #4ecdc4; }
 #etat { font-size: 1.3vw; opacity: .9; }
 main { flex: 1; display: flex; gap: 2vw; min-height: 0; }
 #colonneGauche { width: 26vw; display: flex; flex-direction: column; gap: 2vh; }
 #colonneDroite { flex: 1; display: flex; flex-direction: column; gap: 2vh; min-width: 0; }
-.carte { background: rgba(0,0,0,.35); border-radius: 1.2vw; padding: 1.4vw 1.6vw; }
-.carte h2 { margin: 0 0 1.2vh; font-size: 1.6vw; font-weight: 700; opacity: .9; }
+.carte { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); border-radius: 1.2vw; padding: 1.4vw 1.6vw;
+  box-shadow: 0 1vw 2.5vw rgba(0,0,0,.3); }
+.carte h2 { margin: 0 0 1.2vh; font-size: 1.6vw; font-weight: 600; opacity: .9; }
 #carteQR { text-align: center; }
 #qr { background: #fff; border-radius: .8vw; padding: .7vw; display: inline-block; }
 #qr img { display: block; width: 15vw; height: auto; image-rendering: pixelated; }
@@ -32,16 +40,19 @@ main { flex: 1; display: flex; gap: 2vw; min-height: 0; }
 .joueur.vide { opacity: .35; }
 .joueur.parti { opacity: .5; }
 
-#carteCatalogue { flex: 1; min-height: 0; }
-#catalogue { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2vw; }
-.jeu { background: rgba(255,255,255,.08); border-radius: 1vw; padding: 1.4vw; border: .25vw solid transparent;
-  transition: transform .15s, border-color .15s; }
-.jeu .emoji { font-size: 4vw; line-height: 1; }
-.jeu .titre { font-size: 1.6vw; font-weight: 700; margin-top: 1vh; }
-.jeu .desc { font-size: 1.05vw; opacity: .8; margin-top: .6vh; }
-.jeu .joueurs { font-size: .95vw; opacity: .6; margin-top: 1vh; }
-.jeu.choisi { border-color: #ffd166; transform: scale(1.04); background: rgba(255,209,102,.15); }
+#carteCatalogue { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+#catalogue { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1vw; align-content: start; }
+.jeu { position: relative; border-radius: 1vw; overflow: hidden; background: #262a55; border: .25vw solid transparent;
+  transition: transform .15s, border-color .15s, box-shadow .15s; }
+.jeu .image { aspect-ratio: 16 / 9; background-size: cover; background-position: center; display: flex; align-items: center;
+  justify-content: center; font-size: 3.4vw; }
+.jeu .bas { padding: .7vw .9vw .8vw; }
+.jeu .titre { font-size: 1.2vw; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jeu .joueurs { font-size: .95vw; opacity: .65; margin-top: .2vh; }
+.jeu.choisi { border-color: #ffd166; transform: scale(1.05); box-shadow: 0 0 0 .4vw rgba(255,209,102,.25), 0 1.2vw 2.5vw rgba(0,0,0,.5); z-index: 1; }
 .jeu.indispo { opacity: .45; }
+#detail { margin-top: auto; padding-top: 1.4vh; font-size: 1.3vw; min-height: 3.5vh; }
+#detail b { color: #ffd166; font-weight: 600; }
 
 #params { display: flex; gap: 2vw; flex-wrap: wrap; font-size: 1.3vw; }
 #params .param b { color: #ffd166; }

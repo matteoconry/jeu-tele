@@ -226,7 +226,7 @@ var Console = (function () {
     return jeux.map(function (d) {
       var ok = d.dispo && n >= d.min;
       return {
-        id: d.id, nom: d.nom, emoji: d.emoji || '🎮', description: d.description || '',
+        id: d.id, nom: d.nom, emoji: d.emoji || '🎮', description: d.description || '', vignette: d.vignette, fond: d.fond,
         min: d.min, max: d.max, jouable: ok,
         raison: !d.dispo ? 'Bientôt' : (n < d.min ? 'Il faut ' + d.min + ' joueur' + (d.min > 1 ? 's' : '') : '')
       };
@@ -332,12 +332,14 @@ var Console = (function () {
     var h = '';
     for (var i = 0; i < liste.length; i++) {
       var g = liste[i];
+      var img = g.vignette ? ' style="background-image:url(' + g.vignette + ')">' : ' style="background:' + (g.fond || 'linear-gradient(135deg,#3a3f9e,#7a2e6e)') + '">' + g.emoji;
       h += '<div class="jeu' + (i === selection ? ' choisi' : '') + (g.jouable ? '' : ' indispo') + '">' +
-        '<div class="emoji">' + g.emoji + '</div><div class="titre">' + echapper(g.nom) + '</div>' +
-        '<div class="desc">' + echapper(g.description) + '</div>' +
-        '<div class="joueurs">' + (g.raison ? echapper(g.raison) : (g.min === g.max ? g.min : g.min + ' à ' + g.max) + ' joueurs') + '</div></div>';
+        '<div class="image"' + img + '</div><div class="bas"><div class="titre">' + echapper(g.nom) + '</div>' +
+        '<div class="joueurs">' + (g.raison ? echapper(g.raison) : (g.min === g.max ? g.min : g.min + ' à ' + g.max) + ' joueurs') + '</div></div></div>';
     }
     $('catalogue').innerHTML = h;
+    var choisi = liste[selection];
+    $('detail').innerHTML = choisi ? '<b>' + choisi.emoji + ' ' + echapper(choisi.nom) + '</b> · ' + echapper(choisi.description) : '';
   }
 
   function majParams() {
@@ -402,8 +404,8 @@ var Console = (function () {
     if (!n) return;
     if (k === 37) selection = (selection + n - 1) % n;
     else if (k === 39) selection = (selection + 1) % n;
-    else if (k === 38) selection = (selection + n - 3) % n;
-    else if (k === 40) selection = (selection + 3) % n;
+    else if (k === 38) selection = (selection + n - 5) % n;
+    else if (k === 40) selection = (selection + 5) % n;
     else if (k === 13) { lancer(jeux[selection].id, null); return; }
     else return;
     e.preventDefault();

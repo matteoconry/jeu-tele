@@ -1,6 +1,6 @@
 /*
- * Fiesta des Îles — le plateau : l'île, les cases, le décor, la caméra.
- * Monde virtuel de 1600 × 900. Le décor fixe est pré-dessiné une fois dans une image hors écran.
+ * Fiesta Royale — le plateau : le royaume, les cases, le décor, la caméra.
+ * Monde virtuel de 1600 × 900. Le décor fixe (prairie, chemin, cases, puis modèles 3D Kenney) est pré-dessiné une fois.
  */
 (function (F) {
   'use strict';
@@ -18,7 +18,7 @@
   };
 
   // ---------- Construction du chemin ----------
-  // Boucle principale de 28 cases + raccourci de 9 cases (de la case 7 à la case 21) au pied du volcan.
+  // Boucle principale de 28 cases + raccourci de 9 cases (de la case 7 à la case 21) devant le château.
   var BOUCLE = 'DBBRBCBBDBBRBCBBRBDBBCBRBBCB';
   var RACCOURCI = 'RCBDRBCRB';
   var LETTRE = { D: 'duel', B: 'bleu', R: 'rouge', C: 'chance' };
@@ -47,7 +47,7 @@
     return cases;
   };
 
-  // Rayon de l'île selon l'angle (forme organique)
+  // Contour du domaine (forme organique) : sert à placer la forêt autour du plateau
   function rayonIle(a, f) {
     var w = 1 + 0.06 * Math.sin(3 * a + 1) + 0.04 * Math.sin(5 * a + 2) + 0.025 * Math.sin(8 * a);
     return { x: Math.cos(a) * 700 * w * f, y: Math.sin(a) * 395 * w * f };
@@ -62,47 +62,99 @@
   }
   F.cheminIle = cheminIle;
 
+  // ---------- Décor : le Royaume (modèles 3D libres de Kenney, voir CREDITS.md) ----------
+  var CHATEAU = { x: 800, y: 330 };
+  F.CHATEAU = CHATEAU;
+  F.MODELES_PLATEAU = ['arene/wall', 'arene/wall-gate', 'arene/wall-corner', 'arene/column', 'arene/statue', 'arene/banner', 'arene/tree',
+    'arene/floor-detail', 'arene/trophy', 'ville/building-small-a', 'ville/building-small-b', 'ville/building-small-c', 'ville/building-small-d',
+    'ville/building-garage', 'ville/grass-trees', 'ville/grass-trees-tall', 'ville/pavement-fountain', 'plateforme/flag', 'plateforme/grass'];
+  var decor3d = false;
+  F.decor3dPret = function () { return decor3d; };
+  F.prechargerPlateau = function () {
+    if (!window.Kenney3D || decor3d) return Promise.resolve();
+    return Kenney3D.charger(F.MODELES_PLATEAU).then(function () { decor3d = true; }).catch(function (e) { console.warn('Décor 3D indisponible', e); });
+  };
+
+  // les objets 3D du plateau, placés pour ne jamais cacher une case
+  function objetsDecor(cases) {
+    var rnd = F.graine(42), objets = [];
+    // une case est cachée si un objet est juste devant elle (plus bas à l'écran) et assez haut pour la recouvrir
+    function cache(x, y, larg, haut) {
+      for (var q = 0; q < cases.length; q++) {
+        var cs = cases[q];
+        if (Math.abs(cs.x - x) < larg / 2 + 34 && cs.y > y - haut - 34 && cs.y < y + 36) return true;
+      }
+      return false;
+    }
+    function libre(x, y, rayon) {
+      for (var o = 0; o < objets.length; o++) if (Math.hypot(objets[o].x - x, objets[o].y - y) < rayon + (objets[o].r || 20)) return false;
+      return true;
+    }
+    function poser(o, larg, haut) {
+      if (cache(o.x, o.y, larg, haut) || !libre(o.x, o.y, larg / 2)) return false;
+      o.r = larg / 2; objets.push(o); return true;
+    }
+    // le château au centre : remparts, tours, bannières, statue
+    var C = CHATEAU, E = 44;
+    objets.push({ nom: 'arene/floor-detail', x: C.x, y: C.y, echelle: 230, r: 0 });
+    for (var k = -2; k <= 2; k++) {
+      objets.push({ nom: k === 0 ? 'arene/wall-gate' : 'arene/wall', x: C.x + k * E, y: C.y + 70, echelle: E, r: 30 });
+    }
+    [-1, 1].forEach(function (s) {
+      objets.push({ nom: 'arene/wall', x: C.x + s * 2.5 * E, y: C.y + 70 - 0.5 * E * 0.82 - 4, echelle: E, rot: Math.PI / 2, r: 30 });
+      objets.push({ nom: 'arene/column', x: C.x + s * 2.6 * E, y: C.y + 74, echelle: E * 1.5, r: 30 });
+      objets.push({ nom: 'arene/banner', x: C.x + s * 1.5 * E, y: C.y + 52, echelle: E * 1.2, r: 0 });
+    });
+    objets.push({ nom: 'arene/statue', x: C.x, y: C.y + 10, echelle: E * 1.3, r: 40 });
+    // bosquets et maisons du village, à l'intérieur de la boucle
+    var village = [[470, 300], [560, 250], [1040, 250], [1130, 300], [420, 650], [1180, 650], [600, 700], [1000, 700]];
+    village.forEach(function (v, i) {
+      var nom = 'ville/' + ['building-small-a', 'building-small-b', 'building-small-c', 'building-small-d', 'building-garage', 'pavement-fountain'][i % 6];
+      poser({ nom: nom, x: v[0] + (rnd() - 0.5) * 30, y: v[1] + (rnd() - 0.5) * 20, echelle: 95, rot: [0, Math.PI / 2, Math.PI, -Math.PI / 2][Math.floor(rnd() * 4)] }, 70, 110);
+    });
+    // la forêt tout autour (là où il y avait la mer)
+    for (var p = 0; p < 1400 && objets.length < 240; p++) {
+      var ang = rnd() * Math.PI * 2, dist = 0.25 + rnd() * 1.25, rp = rayonIle(ang, dist);
+      var x = CX + rp.x, y = CY + rp.y;
+      if (x < -200 || x > 1800 || y < -180 || y > 1100) continue;
+      if (Math.abs(x - C.x) < 170 && Math.abs(y - C.y) < 130) continue;
+      var t = 42 + rnd() * 22, haut = t * 1.92 * 0.6;
+      poser({ nom: 'arene/tree', x: x, y: y, echelle: t, rot: rnd() * 6 }, t * 0.66, haut + 10);
+    }
+    // drapeaux au départ
+    var d0 = cases[0];
+    poser({ nom: 'plateforme/flag', x: d0.x - 46, y: d0.y - 6, echelle: 40 }, 20, 40);
+    objets.sort(function (u, v) { return u.y - v.y; });
+    return objets;
+  }
+
   // ---------- Décor pré-dessiné ----------
   F.dessinerDecor = function (cases, echelle) {
-    // Marge autour du monde pour que les hauts-fonds ne soient pas coupés quand la caméra zoome.
     var M = F.MARGE_DECOR;
+    var Wd = LW + 2 * M, Hd = LH + 2 * M;
     var cv = document.createElement('canvas');
-    cv.width = Math.round((LW + 2 * M) * echelle);
-    cv.height = Math.round((LH + 2 * M) * echelle);
+    cv.width = Math.round(Wd * echelle);
+    cv.height = Math.round(Hd * echelle);
     var c = cv.getContext('2d');
+    var en3d = decor3d && window.Kenney3D && Kenney3D.pret();
+    cv.sans3d = !en3d;
+    c.save();
     c.scale(echelle, echelle);
     c.translate(M, M);
     var rnd = F.graine(42);
-
-    // Hauts-fonds turquoise autour de l'île
-    c.save();
-    c.filter = 'blur(18px)';
-    cheminIle(c, 1.16); c.fillStyle = 'rgba(72, 202, 228, .55)'; c.fill();
-    c.restore();
-    cheminIle(c, 1.07); c.fillStyle = 'rgba(144, 224, 239, .55)'; c.fill();
-    // Sable
-    cheminIle(c, 1.0, 0, 10); c.fillStyle = '#d4a373'; c.fill();
-    cheminIle(c, 1.0);
-    var gs = c.createRadialGradient(CX, CY, 200, CX, CY, 720);
-    gs.addColorStop(0, '#fbe7b5'); gs.addColorStop(1, '#f1d18a');
-    c.fillStyle = gs; c.fill();
-    // Herbe
-    cheminIle(c, 0.86, 0, 6); c.fillStyle = '#4c956c'; c.fill();
-    cheminIle(c, 0.86);
-    var gh = c.createRadialGradient(CX, CY - 60, 50, CX, CY, 620);
-    gh.addColorStop(0, '#95d5b2'); gh.addColorStop(0.6, '#74c69d'); gh.addColorStop(1, '#52b788');
-    c.fillStyle = gh; c.fill();
-    // Taches de jungle
-    for (var j = 0; j < 26; j++) {
-      var a = rnd() * Math.PI * 2, d = 0.25 + rnd() * 0.5, r = rayonIle(a, d);
-      c.fillStyle = rnd() < 0.5 ? 'rgba(45,106,79,.35)' : 'rgba(183,228,199,.35)';
-      c.beginPath(); c.ellipse(CX + r.x, CY + r.y, 30 + rnd() * 50, 18 + rnd() * 28, rnd() * 3, 0, 7); c.fill();
+    // prairie
+    var gh = c.createRadialGradient(CX, CY - 60, 80, CX, CY, 900);
+    gh.addColorStop(0, '#9ad98a'); gh.addColorStop(0.55, '#79c26f'); gh.addColorStop(1, '#4f9a55');
+    c.fillStyle = gh; c.fillRect(-M, -M, Wd, Hd);
+    for (var j = 0; j < 40; j++) {
+      var a = rnd() * Math.PI * 2, d = rnd() * 1.3, r = rayonIle(a, d);
+      c.fillStyle = rnd() < 0.5 ? 'rgba(45,106,79,.18)' : 'rgba(220,255,200,.18)';
+      c.beginPath(); c.ellipse(CX + r.x, CY + r.y, 40 + rnd() * 70, 24 + rnd() * 36, rnd() * 3, 0, 7); c.fill();
     }
-
-    // Volcan
-    dessinerVolcan(c, 800, 300);
-
-    // Chemin de sable entre les cases
+    // cour pavée du château
+    c.fillStyle = 'rgba(120,110,100,.35)';
+    c.beginPath(); c.ellipse(CHATEAU.x, CHATEAU.y + 40, 170, 95, 0, 0, 7); c.fill();
+    // chemin pavé entre les cases
     c.lineCap = 'round'; c.lineJoin = 'round';
     function traits(largeur, couleur, decalY) {
       c.strokeStyle = couleur; c.lineWidth = largeur;
@@ -113,68 +165,26 @@
         });
       });
     }
-    traits(34, 'rgba(120,80,40,.25)', 6);
-    traits(30, '#f6e2b3');
-    c.setLineDash([2, 16]);
-    traits(5, 'rgba(160,110,60,.5)');
+    traits(36, 'rgba(60,50,40,.28)', 6);
+    traits(32, '#cfc6b8');
+    c.setLineDash([10, 9]);
+    traits(26, '#e3dccf');
     c.setLineDash([]);
-
-    // Palmiers et petits décors (à l'écart des cases)
-    var objets = [];
-    for (var p = 0; p < 140 && objets.length < 46; p++) {
-      var ang = rnd() * Math.PI * 2, dist = 0.15 + rnd() * 0.8, rp = rayonIle(ang, dist);
-      var x = CX + rp.x, y = CY + rp.y, libre = true;
-      for (var q = 0; q < cases.length; q++) if (Math.hypot(cases[q].x - x, cases[q].y - y) < 62) { libre = false; break; }
-      if (Math.hypot(x - 800, y - 300) < 170) libre = false;
-      for (var o = 0; o < objets.length; o++) if (Math.hypot(objets[o].x - x, objets[o].y - y) < 46) { libre = false; break; }
-      if (libre) objets.push({ x: x, y: y, type: rnd() < 0.62 ? 'palmier' : (rnd() < 0.5 ? 'buisson' : 'fleurs'), t: 0.8 + rnd() * 0.5, r: rnd() });
-    }
-    objets.sort(function (u, v) { return u.y - v.y; });
-    objets.forEach(function (ob) {
-      if (ob.type === 'palmier') F.palmier(c, ob.x, ob.y, ob.t, ob.r);
-      else if (ob.type === 'buisson') buisson(c, ob.x, ob.y, ob.t);
-      else fleurs(c, ob.x, ob.y, ob.r);
-    });
-
-    // Petits rochers dans l'eau
-    for (var k = 0; k < 9; k++) {
-      var ra = rnd() * Math.PI * 2, rr = rayonIle(ra, 1.12 + rnd() * 0.08);
-      rocher(c, CX + rr.x, CY + rr.y, 10 + rnd() * 14);
-    }
-    // Ponton et cabane près du départ
-    ponton(c, cases[0].x + 120, cases[0].y + 60);
-
-    // Cases
+    // cases
     cases.forEach(function (cs) { F.dessinerCase(c, cs); });
-    // Flèches de l'embranchement
     var e = cases[7];
     fleche(c, e.x + 30, e.y - 52, -Math.PI / 2.4);
     fleche(c, e.x + 52, e.y + 22, 0.35);
+    c.restore();
+    // objets 3D par-dessus (arbres, maisons, château)
+    if (en3d) {
+      try {
+        var img = Kenney3D.vueOblique(objetsDecor(cases), { x0: -M, y0: -M, largeur: Wd, hauteur: Hd, echelle: echelle });
+        c.drawImage(img, 0, 0);
+      } catch (err) { console.warn('Décor 3D :', err); cv.sans3d = true; }
+    }
     return cv;
   };
-
-  function dessinerVolcan(c, x, y) {
-    c.save();
-    c.fillStyle = 'rgba(0,0,0,.18)';
-    c.beginPath(); c.ellipse(x, y + 95, 200, 40, 0, 0, 7); c.fill();
-    var g = c.createLinearGradient(x - 180, 0, x + 180, 0);
-    g.addColorStop(0, '#7f5539'); g.addColorStop(0.55, '#9c6644'); g.addColorStop(1, '#5e3a24');
-    c.fillStyle = g;
-    c.beginPath();
-    c.moveTo(x - 190, y + 95);
-    c.quadraticCurveTo(x - 110, y + 20, x - 52, y - 70);
-    c.lineTo(x + 52, y - 70);
-    c.quadraticCurveTo(x + 110, y + 20, x + 190, y + 95);
-    c.closePath(); c.fill();
-    // coulées de lave figées
-    c.strokeStyle = 'rgba(255,120,60,.55)'; c.lineWidth = 9; c.lineCap = 'round';
-    c.beginPath(); c.moveTo(x - 20, y - 66); c.quadraticCurveTo(x - 40, y - 10, x - 70, y + 40); c.stroke();
-    c.beginPath(); c.moveTo(x + 25, y - 66); c.quadraticCurveTo(x + 30, y - 20, x + 58, y + 20); c.stroke();
-    // cratère
-    c.fillStyle = '#3d2314';
-    c.beginPath(); c.ellipse(x, y - 70, 54, 14, 0, 0, 7); c.fill();
-    c.restore();
-  }
 
   F.palmier = function (c, x, y, t, r) {
     t = t || 1;
@@ -273,54 +283,31 @@
     c.restore();
   };
 
-  // ---------- Mer animée (dessinée en direct, en coordonnées écran) ----------
-  F.dessinerMer = function (c, W, H, cam) {
+  // ---------- Fond hors du plateau (forêt sombre) ----------
+  F.dessinerMer = function (c, W, H) {
     var g = c.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, '#0077b6'); g.addColorStop(1, '#023e8a');
+    g.addColorStop(0, '#2f6b3a'); g.addColorStop(1, '#1f4d2b');
     c.fillStyle = g;
     c.fillRect(0, 0, W, H);
-    // reflets
-    c.strokeStyle = 'rgba(255,255,255,.12)';
-    c.lineWidth = Math.max(2, H / 300);
-    c.lineCap = 'round';
-    for (var i = 0; i < 26; i++) {
-      var sx = ((i * 263) % 1000) / 1000, sy = ((i * 577) % 1000) / 1000;
-      var x = (sx * W * 1.2 + F.t * 18 * (1 + (i % 3))) % (W * 1.2) - W * 0.1;
-      var y = sy * H + Math.sin(F.t + i) * 6;
-      var l = 20 + (i % 4) * 14;
-      c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + l / 2, y - 5, x + l, y); c.stroke();
-    }
   };
+  F.dessinerEcume = function () {};
 
-  // Écume autour de l'île (en coordonnées monde)
-  F.dessinerEcume = function (c) {
-    var p = (Math.sin(F.t * 1.4) + 1) / 2;
-    c.save();
-    c.lineWidth = 5;
-    c.strokeStyle = 'rgba(255,255,255,' + (0.25 + 0.3 * p) + ')';
-    cheminIle(c, 1.015 + 0.02 * p); c.stroke();
-    c.strokeStyle = 'rgba(255,255,255,' + (0.18 * (1 - p)) + ')';
-    c.lineWidth = 3;
-    cheminIle(c, 1.05 + 0.03 * p); c.stroke();
-    c.restore();
-  };
-
-  // Fumée et lueur du volcan
+  // Le château : torches qui brillent, et éclairs quand l'orage gronde
   F.dessinerVolcanVivant = function (c, colere) {
-    var x = 800, y = 230;
-    var lueur = 0.5 + 0.5 * Math.sin(F.t * 2.2);
-    var g = c.createRadialGradient(x, y, 4, x, y, 60);
-    g.addColorStop(0, 'rgba(255,170,60,' + (0.7 + 0.3 * lueur) + ')'); g.addColorStop(1, 'rgba(255,90,40,0)');
-    c.fillStyle = g;
-    c.beginPath(); c.ellipse(x, y, 60, 22, 0, 0, 7); c.fill();
-    for (var i = 0; i < 6; i++) {
-      var k = ((F.t * 0.25 + i / 6) % 1);
-      c.fillStyle = 'rgba(230,230,230,' + (0.45 * (1 - k)) + ')';
-      c.beginPath(); c.arc(x + Math.sin(k * 6 + i) * 20 + k * 40, y - 10 - k * 140, 12 + k * 30, 0, 7); c.fill();
-    }
+    var C = CHATEAU;
+    [-1, 1].forEach(function (s) {
+      var x = C.x + s * 114, y = C.y - 10, l = 0.6 + 0.4 * Math.sin(F.t * 9 + s);
+      var g = c.createRadialGradient(x, y, 2, x, y, 26);
+      g.addColorStop(0, 'rgba(255,200,90,' + (0.75 * l) + ')'); g.addColorStop(1, 'rgba(255,140,40,0)');
+      c.fillStyle = g; c.beginPath(); c.arc(x, y, 26, 0, 7); c.fill();
+    });
     if (colere) {
-      c.fillStyle = 'rgba(255,100,40,.8)';
-      for (var j = 0; j < 5; j++) { var u = (F.t * 1.5 + j * 0.2) % 1; c.beginPath(); c.arc(x + (j - 2) * 18 * u * 3, y - 80 * Math.sin(u * Math.PI), 6, 0, 7); c.fill(); }
+      var f = Math.random();
+      if (f < 0.35) { c.fillStyle = 'rgba(255,255,255,' + (0.25 * f / 0.35) + ')'; c.fillRect(-400, -400, 2400, 1700); }
+      c.strokeStyle = 'rgba(255,240,150,.95)'; c.lineWidth = 6; c.lineJoin = 'round';
+      c.beginPath(); var x = C.x + (Math.random() - 0.5) * 200, y = C.y - 260; c.moveTo(x, y);
+      for (var i = 0; i < 6; i++) { x += (Math.random() - 0.5) * 50; y += 40; c.lineTo(x, y); }
+      c.stroke();
     }
   };
 

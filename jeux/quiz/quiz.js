@@ -257,7 +257,7 @@
   }
 
   Console.ajouterJeu({
-    id: 'quiz', nom: 'Le Grand Quiz', emoji: '🧠',
+    id: 'quiz', vignette: 'assets/vignettes/quiz.jpg', nom: 'Le Grand Quiz', emoji: '🧠',
     description: 'Culture générale : réponds en secret sur ton téléphone, le plus rapide gagne plus de points !',
     min: 1, max: 4, perso: true, barre: false, creer: creer
   });

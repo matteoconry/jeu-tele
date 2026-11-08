@@ -1,5 +1,5 @@
 /*
- * Fiesta des Îles — déroulement de la partie (plateau, tours, cases, duels, mini-jeux, finale).
+ * Fiesta Royale — déroulement de la partie (plateau, tours, cases, duels, mini-jeux, finale).
  * S'enregistre dans le catalogue de la console.
  */
 (function (F) {
@@ -9,24 +9,26 @@
   var PIECES_DEPART = 10;
 
   var EVENEMENTS = [
-    { id: 'tresor', nom: 'Trésor enfoui !', texte: '+10 coquillages' },
-    { id: 'crabe', nom: 'Un crabe voleur !', texte: '−5 coquillages' },
+    { id: 'tresor', nom: 'Trésor enfoui !', texte: '+10 pièces' },
+    { id: 'crabe', nom: 'Un voleur masqué !', texte: '−5 pièces' },
     { id: 'tornade', nom: 'Tornade !', texte: 'Tu échanges ta place avec un autre joueur' },
     { id: 'dauphin', nom: 'Un dauphin t\'emmène', texte: 'Avance de 4 cases' },
-    { id: 'genereux', nom: 'Cœur généreux', texte: 'Donne 3 coquillages à chaque joueur' },
-    { id: 'pluie', nom: 'Pluie de coquillages', texte: 'Tout le monde gagne 5 coquillages' },
-    { id: 'fugue', nom: 'L\'étoile s\'enfuit !', texte: 'L\'étoile de mer change de place' },
-    { id: 'volcan', nom: 'Le volcan gronde !', texte: 'Les autres joueurs perdent 3 coquillages' }
+    { id: 'genereux', nom: 'Cœur généreux', texte: 'Donne 3 pièces à chaque joueur' },
+    { id: 'pluie', nom: 'Pluie de pièces d\'or', texte: 'Tout le monde gagne 5 pièces' },
+    { id: 'fugue', nom: 'L\'étoile s\'enfuit !', texte: 'L\'étoile change de place' },
+    { id: 'volcan', nom: 'L\'orage gronde sur le château !', texte: 'Les autres joueurs perdent 3 pièces' }
   ];
 
   var BONUS = [
     { id: 'mj', titre: 'Champion des mini-jeux', texte: 'Le plus de mini-jeux gagnés', val: function (P) { return P.victoiresMJ; } },
-    { id: 'riche', titre: 'Chasseur de trésors', texte: 'Le plus de coquillages gagnés', val: function (P) { return P.gainsTotal; } },
+    { id: 'riche', titre: 'Chasseur de trésors', texte: 'Le plus de pièces gagnés', val: function (P) { return P.gainsTotal; } },
     { id: 'malchance', titre: 'Pas de chance !', texte: 'Le plus de cases pièges', val: function (P) { return P.rouges; } }
   ];
 
   function creer(api) {
     F.viderAnims();
+    if (F.prechargerPlateau) F.prechargerPlateau();
+    if (F.prechargerSprites) F.prechargerSprites();
     F.sonActif = function () { return api.params().son !== false; };
     if (document.fonts && document.fonts.load) { try { document.fonts.load('700 20px Fredoka'); } catch (e) {} }
 
@@ -157,7 +159,7 @@
       }).then(function () { P.ecrase = 0; P.enMouvement = false; });
     }
 
-    // ---------- Étoile de mer ----------
+    // ---------- Étoile ----------
     function placerEtoile(premiere) {
       var possibles = [];
       S.cases.forEach(function (cs, i) {
@@ -184,7 +186,7 @@
         F.son.etoile();
         S.particules.gerbe(b.x, b.y - 40, 20, { forme: 'etoile', tmin: 6, tmax: 10 });
         viser(b.x, b.y, 1.5);
-        return banniere('L\'étoile de mer s\'est posée ici !', '', '#ff9f1c', 1.6);
+        return banniere('L\'étoile s\'est posée ici !', '', '#ff9f1c', 1.6);
       });
     }
 
@@ -192,14 +194,14 @@
       var cs = S.cases[P.case];
       viser(cs.x, cs.y, 1.7);
       if (P.pieces < PRIX_ETOILE) {
-        envoyerUI(P, { emoji: '😢', titre: 'Pas assez…', texte: 'Il faut ' + PRIX_ETOILE + ' coquillages pour l\'étoile de mer.' });
-        await banniere('Pas assez de coquillages…', 'Il en faut ' + PRIX_ETOILE + ' pour l\'étoile de mer', '#6c757d', 1.6);
+        envoyerUI(P, { emoji: '😢', titre: 'Pas assez…', texte: 'Il faut ' + PRIX_ETOILE + ' pièces pour l\'étoile.' });
+        await banniere('Pas assez de pièces…', 'Il en faut ' + PRIX_ETOILE + ' pour l\'étoile', '#6c757d', 1.6);
         return;
       }
-      infoAutres(P, { emoji: '⭐', titre: P.nom + ' hésite…', texte: 'Achat de l\'étoile de mer ?' });
+      infoAutres(P, { emoji: '⭐', titre: P.nom + ' hésite…', texte: 'Achat de l\'étoile ?' });
       var r = await demander(P, {
-        emoji: '⭐', titre: 'L\'étoile de mer !', texte: 'Acheter une étoile de mer pour ' + PRIX_ETOILE + ' coquillages ?',
-        boutons: [{ id: 'oui', label: '⭐ Oui, je la prends !', sous: 'Il te restera ' + (P.pieces - PRIX_ETOILE) + ' 🐚' }, { id: 'non', label: 'Non merci', couleur: '#adb5bd' }]
+        emoji: '⭐', titre: 'L\'étoile !', texte: 'Acheter une étoile pour ' + PRIX_ETOILE + ' pièces ?',
+        boutons: [{ id: 'oui', label: '⭐ Oui, je la prends !', sous: 'Il te restera ' + (P.pieces - PRIX_ETOILE) + ' 🪙' }, { id: 'non', label: 'Non merci', couleur: '#adb5bd' }]
       }, 'oui', 25);
       if (r !== 'oui') return;
       P.pieces -= PRIX_ETOILE;
@@ -209,8 +211,8 @@
       S.particules.gerbe(cs.x, cs.y - 40, 40, { forme: 'confetti', couleurs: ['#ff006e', '#ffbe0b', '#3a86ff', '#8338ec', '#06d6a0'] });
       P.joie = F.t + 2 / F.V;
       flottant(P.x, P.y - 80, '+1 étoile', '#ffd166');
-      envoyerUI(P, { emoji: '🌟', titre: 'Étoile de mer !', texte: 'Tu en as maintenant ' + P.etoiles + '.', vibrer: 200 });
-      await banniere(P.nom + ' obtient une étoile de mer !', P.etoiles + ' étoile' + (P.etoiles > 1 ? 's' : '') + ' de mer au total', P.couleur, 2.2);
+      envoyerUI(P, { emoji: '🌟', titre: 'Étoile !', texte: 'Tu en as maintenant ' + P.etoiles + '.', vibrer: 200 });
+      await banniere(P.nom + ' obtient une étoile !', P.etoiles + ' étoile' + (P.etoiles > 1 ? 's' : '') + ' au total', P.couleur, 2.2);
       await deplacerEtoile();
     }
 
@@ -222,12 +224,12 @@
       if (cs.type === 'bleu') {
         P.bleues++;
         changerPieces(P, 3 * double);
-        envoyerUI(P, { emoji: '😄', titre: 'Case bonus !', texte: '+' + 3 * double + ' coquillages' });
+        envoyerUI(P, { emoji: '😄', titre: 'Case bonus !', texte: '+' + 3 * double + ' pièces' });
         await F.attendre(1.1);
       } else if (cs.type === 'rouge') {
         P.rouges++;
         changerPieces(P, -3 * double);
-        envoyerUI(P, { emoji: '😖', titre: 'Case piège !', texte: '−' + 3 * double + ' coquillages' });
+        envoyerUI(P, { emoji: '😖', titre: 'Case piège !', texte: '−' + 3 * double + ' pièces' });
         await F.attendre(1.1);
       } else if (cs.type === 'chance') {
         await evenement(P);
@@ -257,8 +259,8 @@
       S.roulette = null;
       var autres = S.joueurs.filter(function (x) { return x !== P; });
       switch (choisi.id) {
-        case 'tresor': changerPieces(P, 10); envoyerUI(P, { emoji: '💰', titre: 'Trésor !', texte: '+10 coquillages' }); await F.attendre(1.2); break;
-        case 'crabe': changerPieces(P, -5); envoyerUI(P, { emoji: '🦀', titre: 'Aïe !', texte: 'Un crabe t\'a pris 5 coquillages' }); await F.attendre(1.2); break;
+        case 'tresor': changerPieces(P, 10); envoyerUI(P, { emoji: '💰', titre: 'Trésor !', texte: '+10 pièces' }); await F.attendre(1.2); break;
+        case 'crabe': changerPieces(P, -5); envoyerUI(P, { emoji: '🦹', titre: 'Aïe !', texte: 'Un voleur t\'a pris 5 pièces' }); await F.attendre(1.2); break;
         case 'pluie':
           vueGenerale();
           S.joueurs.forEach(function (x) { changerPieces(x, 5, true); });
@@ -307,8 +309,8 @@
       else {
         infoAutres(P, { emoji: '😬', titre: 'Duel !', texte: P.nom + ' choisit son adversaire…' });
         var id = await demander(P, {
-          emoji: '⚔️', titre: 'Duel !', texte: 'Qui veux-tu défier ? Le gagnant prend 10 coquillages au perdant.',
-          boutons: autres.map(function (x) { return { id: String(x.num), label: x.nom, sous: x.pieces + ' 🐚 · ' + x.etoiles + ' ⭐', couleur: x.couleur }; })
+          emoji: '⚔️', titre: 'Duel !', texte: 'Qui veux-tu défier ? Le gagnant prend 10 pièces au perdant.',
+          boutons: autres.map(function (x) { return { id: String(x.num), label: x.nom, sous: x.pieces + ' 🪙 · ' + x.etoiles + ' ⭐', couleur: x.couleur }; })
         }, String(F.choisir(autres).num), 25);
         Q = autres.filter(function (x) { return String(x.num) === id; })[0] || autres[0];
       }
@@ -318,12 +320,12 @@
       await F.attendre(2.4);
       S.vs = null;
       var mj = choisirMiniJeu();
-      var res = await jouerMiniJeu([P, Q], mj, 'DUEL ÉCLAIR', 'Le gagnant prend ' + mise + ' coquillages');
+      var res = await jouerMiniJeu([P, Q], mj, 'DUEL ÉCLAIR', 'Le gagnant prend ' + mise + ' pièces');
       res[0].gain = null;
       var g = res[0], p = res[1];
       await transition(function () { S.phase = 'plateau'; S.mj = null; F.musique('plateau'); viser(P.x, P.y, 1.3); });
       if (g.rang === p.rang) {
-        await banniere('Égalité !', 'Personne ne gagne de coquillages', '#6c757d', 1.8);
+        await banniere('Égalité !', 'Personne ne gagne de pièces', '#6c757d', 1.8);
       } else {
         g.p.victoiresMJ++;
         var pris = Math.min(mise, p.p.pieces);
@@ -331,7 +333,7 @@
         changerPieces(g.p, pris, true);
         flottant(p.p.x, p.p.y - 70, '−' + pris, '#ff4d6d');
         F.son.gain();
-        await banniere(g.p.nom + ' gagne le duel !', 'et prend ' + pris + ' coquillages à ' + p.p.nom, g.p.couleur, 2.2);
+        await banniere(g.p.nom + ' gagne le duel !', 'et prend ' + pris + ' pièces à ' + p.p.nom, g.p.couleur, 2.2);
       }
     }
 
@@ -395,7 +397,7 @@
       var mj = choisirMiniJeu();
       var n = S.joueurs.length;
       var gains = n >= 3 ? [10, 5, 2] : [10, 3];
-      var res = await jouerMiniJeu(S.joueurs.slice(), mj, 'MINI-JEU', 'Le gagnant remporte 10 coquillages',
+      var res = await jouerMiniJeu(S.joueurs.slice(), mj, 'MINI-JEU', 'Le gagnant remporte 10 pièces',
         function (r) { return gains[r.rang - 1] || 0; });
       await transition(function () { S.phase = 'plateau'; S.mj = null; F.musique('plateau'); vueGenerale(); });
       res.forEach(function (r) {
@@ -432,8 +434,8 @@
           var choix = await demander(P, {
             emoji: '🔀', titre: 'Embranchement !', texte: 'Quel chemin prends-tu ?',
             boutons: [
-              { id: '0', label: '🌴 Le tour de l\'île', sous: 'Plus long, plus tranquille' },
-              { id: '1', label: '🌋 Le raccourci du volcan', sous: 'Plus court, mais plein de pièges' }
+              { id: '0', label: '🌳 Le tour par la forêt', sous: 'Plus long, plus tranquille' },
+              { id: '1', label: '🏰 Le raccourci du château', sous: 'Plus court, mais plein de pièges' }
             ]
           }, '0', 25);
           vers = cs.suivantes[+choix] !== undefined ? cs.suivantes[+choix] : vers;
@@ -455,9 +457,9 @@
       S.phase = 'intro';
       F.musique('plateau');
       var chef = S.joueurs[0];
-      infoAutres(chef, { emoji: '🌴', titre: 'Fiesta des Îles', texte: chef.nom + ' choisit la durée de la partie…' });
+      infoAutres(chef, { emoji: '👑', titre: 'Fiesta Royale', texte: chef.nom + ' choisit la durée de la partie…' });
       var n = await demander(chef, {
-        emoji: '🌴', titre: 'Fiesta des Îles', texte: 'Combien de tours ?',
+        emoji: '👑', titre: 'Fiesta Royale', texte: 'Combien de tours ?',
         boutons: [
           { id: '5', label: '5 tours', sous: 'Partie rapide · environ 15 min' },
           { id: '8', label: '8 tours', sous: 'Partie normale · environ 25 min' },
@@ -479,12 +481,12 @@
         F.son.pas(i * 2);
         S.particules.gerbe(P.x, P.y + 20, 10, { couleur: '#f6e2b3', haut: 100, vmax: 200, g: 600 });
       }
-      await banniere('Chacun commence avec ' + PIECES_DEPART + ' coquillages', '', '#06d6a0', 1.6);
+      await banniere('Chacun commence avec ' + PIECES_DEPART + ' pièces', '', '#06d6a0', 1.6);
       S.etoileCase = placerEtoile(true);
       var e = S.cases[S.etoileCase];
       viser(e.x, e.y, 1.5);
       F.son.etoile();
-      await banniere('Voici l\'étoile de mer !', 'Passe dessus avec ' + PRIX_ETOILE + ' coquillages pour l\'acheter', '#ff9f1c', 2.4);
+      await banniere('Voici l\'étoile !', 'Passe dessus avec ' + PRIX_ETOILE + ' pièces pour l\'acheter', '#ff9f1c', 2.4);
     }
 
     async function finale() {
@@ -518,7 +520,7 @@
         var emo = P.rang === 1 ? '🏆' : (P.rang === 2 ? '🥈' : (P.rang === 3 ? '🥉' : '🎉'));
         envoyerUI(P, {
           emoji: emo, titre: P.rang === 1 ? 'Victoire !' : texteRang(P.rang) + ' place',
-          texte: P.etoiles + ' étoile(s) · ' + P.pieces + ' coquillages', vibrer: P.rang === 1 ? [100, 60, 100, 60, 300] : 80
+          texte: P.etoiles + ' étoile(s) · ' + P.pieces + ' pièces', vibrer: P.rang === 1 ? [100, 60, 100, 60, 300] : 80
         });
       });
       await F.attendre(3);
@@ -600,7 +602,7 @@
     function dessinerMonde(c, W, H) {
       var bs = echelleBase(W, H), s = bs * S.cam.z;
       var voulue = Math.min(1.4, bs * 1.3); // limite la taille de l'image (mémoire de la télé)
-      if (!S.decor || Math.abs(S.decorEchelle - voulue) > 0.01) { S.decor = F.dessinerDecor(S.cases, voulue); S.decorEchelle = voulue; }
+      if (!S.decor || Math.abs(S.decorEchelle - voulue) > 0.01 || (S.decor.sans3d && F.decor3dPret() && Kenney3D.pret())) { S.decor = F.dessinerDecor(S.cases, voulue); S.decorEchelle = voulue; }
       F.dessinerMer(c, W, H, S.cam);
       c.save();
       c.translate(W / 2, H / 2); c.scale(s, s); c.translate(-S.cam.x, -S.cam.y);
@@ -609,7 +611,7 @@
       c.drawImage(S.decor, -Md, -Md, 1600 + 2 * Md, 900 + 2 * Md);
       F.dessinerVolcanVivant(c, F.t < S.volcanColere);
       if (S.eclatCase && F.t - S.eclatCase.t0 < 1.2) F.dessinerCase(c, S.cases[S.eclatCase.id], 1 - (F.t - S.eclatCase.t0) / 1.2);
-      // étoile de mer
+      // étoile
       if (S.etoileCase >= 0) {
         var e = S.cases[S.etoileCase], b = Math.sin(F.t * 3) * 6;
         var g = c.createRadialGradient(e.x, e.y - 40, 5, e.x, e.y - 40, 80);
@@ -695,7 +697,7 @@
       var u = H / 1080;
       c.fillStyle = 'rgba(3, 20, 40, .55)'; c.fillRect(0, 0, W, H);
       var t = F.t - S.intro.t0;
-      var titre = 'Fiesta des Îles';
+      var titre = 'Fiesta Royale';
       c.font = '700 ' + Math.round(150 * u) + 'px ' + F.POLICE;
       var largeur = c.measureText(titre).width, x = W / 2 - largeur / 2;
       var couleurs = ['#ffbe0b', '#fb5607', '#ff006e', '#8338ec', '#3a86ff', '#06d6a0'];
@@ -708,7 +710,7 @@
       F.etoile(c, W / 2 - largeur / 2 - 80 * u, H * 0.26, 50 * u, Math.sin(t) * 0.3);
       F.etoile(c, W / 2 + largeur / 2 + 80 * u, H * 0.26, 50 * u, -Math.sin(t) * 0.3);
       if (S.phase === 'intro') {
-        F.texte(c, 'Le grand jeu de plateau de l\'île !', W / 2, H * 0.4, 44 * u, '#fff');
+        F.texte(c, 'Le grand jeu de plateau du royaume !', W / 2, H * 0.4, 44 * u, '#fff');
         var n = S.joueurs.length, esp = 240 * u;
         S.joueurs.forEach(function (P, k) {
           var px = W / 2 - (n - 1) * esp / 2 + k * esp;
@@ -722,11 +724,11 @@
         F.texte(c, 'Les règles en bref (' + S.nbTours + ' tours)', W / 2, by + 60 * u, 48 * u, '#ffd166', { contour: false });
         var lignes = [
           ['de', 'Lance le dé sur ton téléphone et avance de 1 à 10 cases.'],
-          ['etoile', 'Passe sur l\'étoile de mer avec 20 coquillages pour l\'acheter.'],
-          ['bleu', 'Case bleue : +3 coquillages.   Case rouge : −3.'],
+          ['etoile', 'Passe sur l\'étoile avec 20 pièces pour l\'acheter.'],
+          ['bleu', 'Case bleue : +3 pièces.   Case rouge : −3.'],
           ['chance', 'Case verte : surprise !   Case violette : duel contre un joueur.'],
-          ['coquillage', 'À la fin de chaque tour : un mini-jeu pour gagner des coquillages.'],
-          ['podium', 'À la fin, le plus d\'étoiles de mer gagne. Bonne chance !']
+          ['coquillage', 'À la fin de chaque tour : un mini-jeu pour gagner des pièces.'],
+          ['podium', 'À la fin, le plus d\'étoiles gagne. Bonne chance !']
         ];
         lignes.forEach(function (l, k) {
           var ly = by + 140 * u + k * 70 * u, ix = bx + 90 * u;
@@ -801,7 +803,7 @@
       F.texte(c, B.nom, bx, H * 0.78, 64 * u, '#fff');
       var s = t > 0.4 ? 1 + Math.max(0, 0.6 - (t - 0.4)) * 1.2 : 0;
       F.texte(c, 'VS', W / 2, H * 0.5, 200 * u * s, '#ffd166', { contour: '#d00000', epaisseur: 22 * u });
-      F.texte(c, 'Mise : ' + S.vs.mise + ' coquillages', W / 2, H * 0.9, 44 * u, '#fff');
+      F.texte(c, 'Mise : ' + S.vs.mise + ' pièces', W / 2, H * 0.9, 44 * u, '#fff');
     }
 
     function dessinerCarteBonus(c, W, H) {
@@ -824,7 +826,7 @@
           F.texte(c, P.nom, px, y + 420 * u, 44 * u, '#1b1b2f', { contour: false });
         });
         F.etoile(c, W / 2 - 60 * u, y + 495 * u, 28 * u, 0);
-        F.texte(c, '+1 étoile de mer', W / 2 + 40 * u, y + 497 * u, 40 * u, '#fb8500', { contour: false });
+        F.texte(c, '+1 étoile', W / 2 + 40 * u, y + 497 * u, 40 * u, '#fb8500', { contour: false });
       }
     }
 
@@ -993,10 +995,10 @@
   }
 
   Console.ajouterJeu({
-    id: 'fiesta',
-    nom: 'Fiesta des Îles',
-    emoji: '🌴',
-    description: 'Le grand jeu de plateau : dé, étoiles de mer, duels et mini-jeux !',
+    id: 'fiesta', vignette: 'assets/vignettes/fiesta.jpg',
+    nom: 'Fiesta Royale',
+    emoji: '👑',
+    description: 'Le grand jeu de plateau du royaume : dé, pièces d\'or, étoiles, duels et mini-jeux !',
     min: 2,
     max: 4,
     perso: true,

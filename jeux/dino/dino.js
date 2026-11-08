@@ -23,6 +23,7 @@
 
   function creer(api) {
     F.viderAnims();
+    if (F.prechargerSprites) F.prechargerSprites();
     F.sonActif = function () { return api.params().son !== false; };
     var L = F.creerLien(api);
     var S = { phase: 'titre', t0: F.t, x: 0, v: V0, obstacles: [], prochain: 900, particules: new F.Particules(), compte: null, record: 0, fin: null, temps: 0 };
@@ -176,23 +177,43 @@
       void n;
     }
 
-    // Décor d'un couloir (ciel, soleil, volcans, nuages), largeur w en unités de couloir
+    // Décor d'un couloir (ciel, volcans au loin, collines, forêt en 3D Kenney), largeur w en unités de couloir
     function decor(c, w, i) {
       var g = c.createLinearGradient(0, 0, 0, SOL);
-      g.addColorStop(0, '#ff9e80'); g.addColorStop(0.6, '#ffcf99'); g.addColorStop(1, '#ffe8c2');
+      g.addColorStop(0, '#5fb8ff'); g.addColorStop(0.7, '#bfe6ff'); g.addColorStop(1, '#e6f7ff');
       c.fillStyle = g; c.fillRect(0, 0, w, SOL);
-      c.fillStyle = 'rgba(255,240,200,.85)'; c.beginPath(); c.arc(w * 0.72, 120, 70, 0, 7); c.fill();
-      var d = (S.x * 0.08 + i * 300) % 700;
-      c.fillStyle = 'rgba(120,70,90,.3)';
-      for (var v = -1; v < w / 700 + 1; v++) {
-        var vx = v * 700 - d;
-        c.beginPath(); c.moveTo(vx, SOL); c.lineTo(vx + 230, 170); c.lineTo(vx + 290, 170); c.lineTo(vx + 520, SOL); c.fill();
-      }
-      c.fillStyle = 'rgba(255,255,255,.75)';
+      c.fillStyle = 'rgba(255,250,220,.9)'; c.beginPath(); c.arc(w * 0.72, 110, 60, 0, 7); c.fill();
+      c.fillStyle = 'rgba(255,250,220,.25)'; c.beginPath(); c.arc(w * 0.72, 110, 90, 0, 7); c.fill();
+      // nuages
+      c.fillStyle = 'rgba(255,255,255,.9)';
       var tour = w + 400;
       for (var n = 0; n < 5; n++) {
-        var nx = ((n * 397 + i * 151 - S.x * 0.15) % tour + tour) % tour - 200, ny = 60 + (n * 53) % 140;
-        c.beginPath(); c.arc(nx, ny, 26, 0, 7); c.arc(nx + 32, ny - 10, 32, 0, 7); c.arc(nx + 66, ny, 24, 0, 7); c.fill();
+        var nx = ((n * 397 + i * 151 - S.x * 0.05) % tour + tour) % tour - 200, ny = 50 + (n * 53) % 110;
+        c.beginPath(); c.arc(nx, ny, 24, 0, 7); c.arc(nx + 30, ny - 10, 30, 0, 7); c.arc(nx + 62, ny, 22, 0, 7); c.fill();
+        c.fillRect(nx, ny, 62, 22);
+      }
+      // volcans au loin (ils fument un peu)
+      var d = (S.x * 0.06 + i * 300) % 900;
+      for (var v = -1; v < w / 900 + 1; v++) {
+        var vx = v * 900 - d;
+        c.fillStyle = '#9a8cb8';
+        c.beginPath(); c.moveTo(vx, SOL - 40); c.lineTo(vx + 250, 150); c.lineTo(vx + 310, 150); c.lineTo(vx + 560, SOL - 40); c.fill();
+        c.fillStyle = 'rgba(255,255,255,.55)';
+        for (var f = 0; f < 3; f++) { var fy = 130 - f * 26 - (F.t * 10 % 26); c.beginPath(); c.arc(vx + 280 + f * 14, fy, 14 + f * 5, 0, 7); c.fill(); }
+      }
+      // collines
+      var dc = S.x * 0.15 + i * 200;
+      c.fillStyle = '#8fd17a';
+      c.beginPath(); c.moveTo(0, SOL);
+      for (var x = 0; x <= w + 40; x += 40) c.lineTo(x, SOL - 70 - 26 * Math.sin((x + dc) / 190) - 14 * Math.sin((x + dc) / 70));
+      c.lineTo(w + 40, SOL); c.fill();
+      // forêt (modèles 3D Kenney, en parallaxe)
+      var pas = 150, dt = S.x * 0.35 + i * 77, debut = Math.floor(dt / pas) - 1;
+      for (var t = debut; t < debut + w / pas + 3; t++) {
+        var tx = t * pas - dt + ((t * 53) % 60), h = 120 + ((t * 37) % 3) * 30;
+        if (!F.dessinerSprite(c, 'arene/tree', tx, SOL + 4 - ((t * 7) % 2) * 14, h, { taille: 160, angle: 0.4, hauteur: 0.25 })) {
+          c.fillStyle = '#4f9a55'; c.beginPath(); c.moveTo(tx - h * 0.25, SOL); c.lineTo(tx, SOL - h); c.lineTo(tx + h * 0.25, SOL); c.fill();
+        }
       }
     }
 
@@ -202,8 +223,8 @@
       c.scale(k, k);
       decor(c, 1600 / k, i);
       // sol et herbes (parallaxe)
-      c.fillStyle = '#6a994e'; c.fillRect(0, SOL, 1600 / k, 14);
-      c.fillStyle = '#a7754d'; c.fillRect(0, SOL + 14, 1600 / k, BASE - SOL - 14);
+      c.fillStyle = '#5cb85c'; c.fillRect(0, SOL, 1600 / k, 16);
+      c.fillStyle = '#b07a4f'; c.fillRect(0, SOL + 16, 1600 / k, BASE - SOL - 16);
       c.fillStyle = 'rgba(0,0,0,.12)';
       for (var t = 0; t < 30; t++) { var tx = ((t * 137 - S.x) % (1600 / k + 200) + (1600 / k + 200)) % (1600 / k + 200) - 100; c.fillRect(tx, SOL + 26 + (t % 3) * 14, 18, 5); }
       c.strokeStyle = '#386641'; c.lineWidth = 4; c.lineCap = 'round';
@@ -390,7 +411,7 @@
   }
 
   Console.ajouterJeu({
-    id: 'dino', nom: 'Dino Sprint', emoji: '🦖',
+    id: 'dino', vignette: 'assets/vignettes/dino.jpg', nom: 'Dino Sprint', emoji: '🦖',
     description: 'Course de dinos : saute, baisse-toi, ramasse les œufs. Le dernier debout gagne !',
     min: 1, max: 4, perso: true, barre: false, creer: creer
   });
