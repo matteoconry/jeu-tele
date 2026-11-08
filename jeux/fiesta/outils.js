@@ -312,7 +312,7 @@ var Fiesta = window.Fiesta || {};
       else if (p.forme === 'confetti') {
         c.save(); c.translate(p.x, p.y); c.rotate(p.rot); c.fillStyle = p.couleur;
         c.fillRect(-p.taille / 2, -p.taille / 4, p.taille, p.taille / 2); c.restore();
-      } else if (p.forme === 'coquillage') F.coquillage(c, p.x, p.y, p.taille);
+      } else if (p.forme === 'coquillage' || p.forme === 'piece') F.coquillage(c, p.x, p.y, p.taille);
       else { c.fillStyle = p.couleur; c.beginPath(); c.arc(p.x, p.y, p.taille * (0.5 + a / 2), 0, 7); c.fill(); }
     }
     c.globalAlpha = 1;

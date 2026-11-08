@@ -1,6 +1,6 @@
 /*
- * Magnats des Îles — jeu de plateau d'achat de propriétés (2 à 4 joueurs).
- * Un anneau de 28 cases autour d'une île : on achète des lieux, on construit des villas,
+ * Magnats de la Ville — jeu de plateau d'achat de propriétés (2 à 4 joueurs).
+ * Un anneau de 28 cases autour d'une ville : on achète des rues, on construit des immeubles,
  * on encaisse des loyers. Le dernier non ruiné (ou le plus riche à la fin) gagne.
  */
 (function (F) {
@@ -15,36 +15,124 @@
   function port(nom) { return { type: 'port', nom: nom, prix: PRIX_PORT }; }
   var CASES = [
     { type: 'depart', nom: 'Départ' },
-    p('Plage des Galets', 'brun', 60), { type: 'bouteille', nom: 'Bouteille à la mer' }, p('Crique aux Crabes', 'brun', 70),
-    port('Embarcadère Nord'), p('Marché aux Fruits', 'ciel', 100), p('Rue des Pêcheurs', 'ciel', 120),
-    { type: 'ile', nom: 'Île déserte' },
-    p('Allée des Flamants', 'rose', 140), { type: 'taxe', nom: 'Taxe des cocotiers', montant: 100 }, p('Jardin Tropical', 'rose', 160),
-    port('Port Sud'), p('Quai des Lanternes', 'orange', 180), p('Place du Phare', 'orange', 200),
-    { type: 'hamac', nom: 'Hamac au trésor' },
-    p('Boulevard du Volcan', 'rouge', 220), { type: 'bouteille', nom: 'Bouteille à la mer' }, p('Chemin de Lave', 'rouge', 240),
-    port('Quai Est'), p('Baie Dorée', 'jaune', 260), p('Lagon Turquoise', 'jaune', 280),
-    { type: 'vague', nom: 'Grande vague' },
-    p('Colline aux Palmiers', 'vert', 300), p('Forêt des Perroquets', 'vert', 320), port('Ponton Ouest'),
-    { type: 'bouteille', nom: 'Bouteille à la mer' }, p('Villa du Récif', 'marine', 350), p('Palais des Coraux', 'marine', 400)
+    p('Ruelle des Lilas', 'brun', 60), { type: 'bouteille', nom: 'Enveloppe surprise' }, p('Impasse du Moulin', 'brun', 70),
+    port('Station Beffroi'), p('Rue des Boulangers', 'ciel', 100), p('Place du Marché', 'ciel', 120),
+    { type: 'ile', nom: 'Embouteillage' },
+    p('Allée des Tilleuls', 'rose', 140), { type: 'taxe', nom: 'Taxe de stationnement', montant: 100 }, p('Square des Artistes', 'rose', 160),
+    port('Station Université'), p('Rue du Théâtre', 'orange', 180), p('Place de l\'Horloge', 'orange', 200),
+    { type: 'hamac', nom: 'Fontaine aux vœux' },
+    p('Avenue des Platanes', 'rouge', 220), { type: 'bouteille', nom: 'Enveloppe surprise' }, p('Cours des Remparts', 'rouge', 240),
+    port('Station Stade'), p('Quartier des Ateliers', 'jaune', 260), p('Boulevard des Lumières', 'jaune', 280),
+    { type: 'vague', nom: 'Déviation' },
+    p('Parc du Belvédère', 'vert', 300), p('Avenue du Musée', 'vert', 320), port('Station Hôpital'),
+    { type: 'bouteille', nom: 'Enveloppe surprise' }, p('Colline des Ambassades', 'marine', 350), p('Hauts de la Couronne', 'marine', 400)
   ];
 
   var BOUTEILLES = [
-    { texte: 'Un dauphin te rapporte un trésor !', effet: 'gain', n: 150 },
-    { texte: 'Tu trouves une perle rare sur la plage.', effet: 'gain', n: 100 },
-    { texte: 'Ton bateau a besoin de réparations.', effet: 'perte', n: 100 },
-    { texte: 'Le vent te pousse jusqu\'au Départ.', effet: 'depart' },
-    { texte: 'Une vague t\'emporte sur l\'île déserte !', effet: 'ile' },
+    { texte: 'Tu gagnes au loto du quartier !', effet: 'gain', n: 150 },
+    { texte: 'Tu retrouves un billet oublié dans ta veste.', effet: 'gain', n: 100 },
+    { texte: 'Ta voiture passe au garage.', effet: 'perte', n: 100 },
+    { texte: 'Un taxi te ramène au Départ.', effet: 'depart' },
+    { texte: 'Mauvais itinéraire : tu finis coincé dans l\'embouteillage !', effet: 'ile' },
     { texte: 'C\'est ton anniversaire : chaque joueur t\'offre 30.', effet: 'anniv', n: 30 },
-    { texte: 'Tu offres une tournée de jus de coco : donne 25 à chaque joueur.', effet: 'tournee', n: 25 },
-    { texte: 'Entretien de tes villas : 25 par niveau construit.', effet: 'entretien', n: 25 },
-    { texte: 'Une pirogue t\'emmène jusqu\'au prochain port.', effet: 'port' },
-    { texte: 'Un perroquet te montre un raccourci : avance de 3 cases.', effet: 'avance', n: 3 },
-    { texte: 'Tu gagnes le concours de châteaux de sable !', effet: 'gain', n: 50 },
-    { texte: 'Amende pour baignade interdite.', effet: 'perte', n: 50 }
+    { texte: 'Tu offres une tournée de cafés : donne 25 à chaque joueur.', effet: 'tournee', n: 25 },
+    { texte: 'Ravalement des façades : 25 par étage construit.', effet: 'entretien', n: 25 },
+    { texte: 'Tu sautes dans le tram jusqu\'à la prochaine station.', effet: 'port' },
+    { texte: 'Un passant t\'indique un raccourci : avance de 3 cases.', effet: 'avance', n: 3 },
+    { texte: 'Tu gagnes le concours des plus belles vitrines !', effet: 'gain', n: 50 },
+    { texte: 'Amende pour stationnement gênant.', effet: 'perte', n: 50 }
   ];
+
+  // ---------- Décor : une petite ville vue de 3/4 (modèles Kenney CC0, voir CREDITS.md) ----------
+  var MODELES_VILLE = ['ville/building-small-a', 'ville/building-small-b', 'ville/building-small-c', 'ville/building-small-d',
+    'ville/building-garage', 'ville/pavement-fountain', 'arene/tree'];
+  var decor3d = false;
+  function prechargerVille() {
+    if (!window.Kenney3D) return;
+    Kenney3D.charger(MODELES_VILLE).then(function () { decor3d = true; }).catch(function (e) { console.warn('Décor 3D indisponible', e); });
+  }
+  var RUES_Y = [262, 640], RUES_X = [430, 1170], LARGEUR_RUE = 56;
+  function decorVille() {
+    var cv = document.createElement('canvas'); cv.width = 1600; cv.height = 900;
+    var c = cv.getContext('2d');
+    c.fillStyle = '#8bc34a'; c.fillRect(0, 0, 1600, 900);
+    // trottoirs puis chaussées
+    c.fillStyle = '#cfd4da';
+    RUES_Y.forEach(function (y) { c.fillRect(0, y - LARGEUR_RUE / 2 - 10, 1600, LARGEUR_RUE + 20); });
+    RUES_X.forEach(function (x) { c.fillRect(x - LARGEUR_RUE / 2 - 10, 0, LARGEUR_RUE + 20, 900); });
+    c.fillRect(560, 340, 480, 222);
+    c.fillStyle = '#495057';
+    RUES_Y.forEach(function (y) { c.fillRect(0, y - LARGEUR_RUE / 2, 1600, LARGEUR_RUE); });
+    RUES_X.forEach(function (x) { c.fillRect(x - LARGEUR_RUE / 2, 0, LARGEUR_RUE, 900); });
+    c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 3; c.setLineDash([22, 18]);
+    RUES_Y.forEach(function (y) { c.beginPath(); c.moveTo(0, y); c.lineTo(1600, y); c.stroke(); });
+    RUES_X.forEach(function (x) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, 900); c.stroke(); });
+    c.setLineDash([]);
+    // passages piétons aux carrefours
+    c.fillStyle = 'rgba(255,255,255,.8)';
+    RUES_X.forEach(function (x) { RUES_Y.forEach(function (y) {
+      for (var k = -2; k <= 2; k++) { c.fillRect(x - LARGEUR_RUE / 2 - 14, y + k * 11 - 3, 10, 6); c.fillRect(x + LARGEUR_RUE / 2 + 4, y + k * 11 - 3, 10, 6); }
+    }); });
+    // place centrale pavée
+    c.fillStyle = '#e9ecef'; F.rr(c, 570, 350, 460, 202, 18); c.fill();
+    var en3d = decor3d && window.Kenney3D && Kenney3D.pret();
+    if (en3d) {
+      try {
+        var objets = [], phi = 0.95, sp = Math.sin(phi), BAT = ['building-small-a', 'building-small-b', 'building-small-c', 'building-small-d', 'building-garage'];
+        var COUL = [null, '#e76f51', '#3a86ff', null, '#8338ec', '#2a9d8f', null, '#ffbe0b'];
+        var n = 0;
+        // immeubles alignés le long des avenues, face à la rue
+        RUES_Y.forEach(function (ry, k) {
+          for (var x = 140; x < 1500; x += 92) {
+            if (RUES_X.some(function (rx) { return Math.abs(x - rx) < 70; })) continue;
+            [-1, 1].forEach(function (cote) {
+              if (k === 0 && cote > 0 && x > 520 && x < 1080) return; // place centrale
+              if (k === 1 && cote < 0 && x > 520 && x < 1080) return;
+              var y = ry + cote * (LARGEUR_RUE / 2 + 52);
+              objets.push({ nom: 'ville/' + BAT[n % BAT.length], x: x, y: y, echelle: 78, rot: cote < 0 ? 0 : Math.PI,
+                couleur: COUL[n % COUL.length] || undefined, teintes: [0.5, 0.75] });
+              n++;
+            });
+          }
+        });
+        // arbres le long des avenues verticales et autour de la place
+        RUES_X.forEach(function (rx) {
+          for (var y = 60; y < 880; y += 70) {
+            if (RUES_Y.some(function (ry) { return Math.abs(y - ry) < 60; })) continue;
+            objets.push({ nom: 'arene/tree', x: rx - LARGEUR_RUE / 2 - 30, y: y, echelle: 34, rot: y });
+            objets.push({ nom: 'arene/tree', x: rx + LARGEUR_RUE / 2 + 30, y: y + 35, echelle: 34, rot: y * 2 });
+          }
+        });
+        [[600, 370], [1000, 370], [600, 540], [1000, 540], [700, 360], [900, 360]].forEach(function (q, i) { objets.push({ nom: 'arene/tree', x: q[0], y: q[1], echelle: 36, rot: i }); });
+        objets.push({ nom: 'ville/pavement-fountain', x: 800, y: 455, echelle: 110 });
+        objets.sort(function (a, b) { return a.y - b.y; });
+        var img = Kenney3D.vueOblique(objets, { x0: 0, y0: 0, largeur: 1600, hauteur: 900, echelle: 1, phi: phi });
+        c.drawImage(img, 0, 0);
+        void sp;
+      } catch (err) { console.warn('Décor 3D :', err); en3d = false; }
+    }
+    if (!en3d) {
+      // en attendant la 3D : des toits plats
+      RUES_Y.forEach(function (ry) {
+        for (var x = 140; x < 1500; x += 92) {
+          if (RUES_X.some(function (rx) { return Math.abs(x - rx) < 70; })) continue;
+          [-1, 1].forEach(function (cote) {
+            c.fillStyle = ['#e9c46a', '#f4a261', '#90caf9', '#ced4da'][(x / 92 | 0) % 4];
+            F.rr(c, x - 36, ry + cote * (LARGEUR_RUE / 2 + 52) - 34, 72, 62, 6); c.fill();
+          });
+        }
+      });
+    }
+    // léger voile pour que les cases et les textes ressortent
+    c.fillStyle = 'rgba(16,24,40,.18)'; c.fillRect(0, 0, 1600, 900);
+    cv.sans3d = !en3d;
+    return cv;
+  }
 
   function creer(api) {
     F.viderAnims();
+    prechargerVille();
+    if (F.prechargerSprites) F.prechargerSprites();
     F.sonActif = function () { return api.params().son !== false; };
     var L = F.creerLien(api);
     var cases = CASES.map(function (c, i) {
@@ -57,7 +145,7 @@
       particules: new F.Particules(), flottants: [], t0: F.t, fin: null, pioche: F.melanger(BOUTEILLES)
     };
 
-    // ---------- Géométrie : les cases sur une ellipse autour de l'île ----------
+    // ---------- Géométrie : les cases sur une ellipse autour de la ville ----------
     // Anneau rectangulaire : 9 cases en bas (de droite à gauche), 5 à gauche, 9 en haut, 5 à droite.
     var CX = 800, CY = 450, M = 8, HB = 116, WB = (1600 - 2 * M) / 9, HS = (900 - 2 * M - 2 * HB) / 5;
     cases.forEach(function (c, i) {
@@ -122,7 +210,7 @@
       }
       var libres = proprietesDe(P).filter(function (c) { return !c.hypo && c.niveau === 0; }).sort(function (a, b) { return a.prix - b.prix; });
       for (var i = 0; i < libres.length && P.argent < montant; i++) { libres[i].hypo = true; P.argent += libres[i].prix / 2; vendu = true; }
-      if (vendu) { log(P.nom + ' vend et hypothèque pour payer', '#ffd166'); await banniere('Il faut payer !', P.nom + ' vend des villas et hypothèque des lieux', '#6c757d', 2); }
+      if (vendu) { log(P.nom + ' vend et hypothèque pour payer', '#ffd166'); await banniere('Il faut payer !', P.nom + ' vend des étages et hypothèque des rues', '#6c757d', 2); }
     }
     async function faillite(P, crea) {
       P.faillite = true;
@@ -203,7 +291,7 @@
         log(P.nom + ' fait ' + d.a + ' + ' + d.b + ' = ' + d.total + (d.double ? ' (double !)' : ''));
         if (d.double) doubles++;
         if (doubles === 3) {
-          await banniere('Trois doubles !', P.nom + ' est emporté sur l\'île déserte', '#0077b6', 2);
+          await banniere('Trois doubles !', P.nom + ' roule trop vite : direction l\'embouteillage', '#6c757d', 2);
           await allerIle(P);
           return;
         }
@@ -218,26 +306,26 @@
       P.ile++;
       var peutPayer = P.argent >= AMENDE_ILE;
       var choix = P.ile > 3 ? 'payer' : await L.demander(P, {
-        emoji: '🏝️', titre: 'Île déserte', texte: 'Essai ' + (P.ile - 1) + ' sur 3. Paye ' + AMENDE_ILE + ' pour partir en bateau, ou tente un double.',
-        boutons: [{ id: 'double', label: '🎲 Tenter un double' }].concat(peutPayer ? [{ id: 'payer', label: '⛵ Payer ' + AMENDE_ILE, couleur: '#adb5bd' }] : [])
+        emoji: '🚧', titre: 'Embouteillage', texte: 'Essai ' + (P.ile - 1) + ' sur 3. Paye ' + AMENDE_ILE + ' pour prendre un taxi, ou tente un double.',
+        boutons: [{ id: 'double', label: '🎲 Tenter un double' }].concat(peutPayer ? [{ id: 'payer', label: '🚕 Taxi : ' + AMENDE_ILE, couleur: '#adb5bd' }] : [])
       }, 'double', 40);
       if (choix === 'payer') {
         var ok = await payer(P, AMENDE_ILE, null);
         if (!ok) return false;
         S.cagnotte += AMENDE_ILE;
         P.ile = 0;
-        log(P.nom + ' quitte l\'île en bateau');
+        log(P.nom + ' quitte l\'embouteillage en taxi');
         return true;
       }
       var d = await lancerDes();
       if (d.double) {
         P.ile = 0;
-        await banniere('Double !', P.nom + ' s\'échappe de l\'île', P.couleur, 1.4);
+        await banniere('Double !', P.nom + ' se faufile hors de l\'embouteillage', P.couleur, 1.4);
         await avancer(P, d.total);
         await caseArrivee(P, d.total);
         return false;
       }
-      log(P.nom + ' reste sur l\'île déserte');
+      log(P.nom + ' reste coincé dans l\'embouteillage');
       if (P.ile > 3) { P.ile = 4; }
       await F.attendre(0.6);
       return false;
@@ -247,7 +335,7 @@
       await teleporter(P, 7);
       P.ile = 1;
       F.son.perte();
-      log(P.nom + ' échoue sur l\'île déserte', '#48cae4');
+      log(P.nom + ' est coincé dans l\'embouteillage', '#adb5bd');
     }
 
     function optionsConstruction(P) {
@@ -267,7 +355,7 @@
       while (!L.arrete) {
         var cons = optionsConstruction(P), hyp = optionsHypo(P);
         var boutons = [{ id: 'des', label: '🎲 LANCER LES DÉS' }];
-        if (cons.length) boutons.push({ id: 'construire', label: '🏗️ Construire', sous: cons.length + ' lieu(x) possible(s)', couleur: '#80ed99' });
+        if (cons.length) boutons.push({ id: 'construire', label: '🏗️ Construire', sous: cons.length + ' rue(s) possible(s)', couleur: '#80ed99' });
         if (hyp.length) boutons.push({ id: 'hypo', label: '🏦 Lever une hypothèque', couleur: '#ffd166' });
         if (boutons.length === 1) {
           await L.demander(P, { emoji: '🎲', titre: 'À toi !', texte: 'Tu as ' + P.argent + ' pièces.', boutons: boutons, disposition: 'geant' }, 'des', 40);
@@ -281,7 +369,7 @@
           texte: 'Tu as ' + P.argent + ' pièces.',
           boutons: liste.map(function (c) {
             var cout = choix === 'construire' ? coutVilla(c) : Math.round(c.prix * 0.55);
-            var sous = choix === 'construire' ? (c.niveau === 3 ? 'Palais' : 'Villa ' + (c.niveau + 1)) + ' · loyer ensuite ' + Math.round(c.prix * [0, 0.5, 1.5, 3.2, 4.8][c.niveau + 1] / 10) * 10 : 'Le lieu rapporte à nouveau des loyers';
+            var sous = choix === 'construire' ? (c.niveau === 3 ? 'Gratte-ciel' : 'Étage ' + (c.niveau + 1)) + ' · loyer ensuite ' + Math.round(c.prix * [0, 0.5, 1.5, 3.2, 4.8][c.niveau + 1] / 10) * 10 : 'La rue rapporte à nouveau des loyers';
             return { id: String(c.id), label: c.nom + ' (−' + cout + ')', sous: sous, couleur: c.groupe ? GROUPES[c.groupe] : '#adb5bd' };
           }).concat([{ id: 'retour', label: '↩ Retour', couleur: '#adb5bd' }])
         }, 'retour', 40);
@@ -291,7 +379,7 @@
           argent(P, -coutVilla(c)); c.niveau++;
           F.son.etoile();
           S.particules.gerbe(c.x, c.y - 30, 18, { couleurs: ['#fff', GROUPES[c.groupe], '#ffd166'], haut: 300, vmax: 260 });
-          log(P.nom + ' construit ' + (c.niveau === 4 ? 'un palais' : 'une villa') + ' sur ' + c.nom, '#80ed99');
+          log(P.nom + ' construit ' + (c.niveau === 4 ? 'un gratte-ciel' : 'un étage') + ' sur ' + c.nom, '#80ed99');
         } else if (choix === 'hypo' && c.hypo && P.argent >= Math.round(c.prix * 0.55)) {
           argent(P, -Math.round(c.prix * 0.55)); c.hypo = false; F.son.gain();
           log(P.nom + ' lève l\'hypothèque de ' + c.nom);
@@ -310,7 +398,7 @@
           } else {
             L.uiTous({ emoji: '🤔', titre: P.nom + ' réfléchit…', texte: 'Achètera ? ' + c.nom + ' (' + c.prix + ')' }, P);
             var r = await L.demander(P, {
-              emoji: c.type === 'port' ? '⚓' : '🏡', titre: c.nom, texte: 'Prix : ' + c.prix + ' · Loyer : ' + (c.type === 'port' ? '25 à 200 selon tes ports' : Math.round(c.prix * 0.1) + ' (×2 avec le groupe complet)') + '\nTu as ' + P.argent + ' pièces.',
+              emoji: c.type === 'port' ? '🚋' : '🏠', titre: c.nom, texte: 'Prix : ' + c.prix + ' · Loyer : ' + (c.type === 'port' ? '25 à 200 selon tes stations' : Math.round(c.prix * 0.1) + ' (×2 avec le groupe complet)') + '\nTu as ' + P.argent + ' pièces.',
               boutons: [{ id: 'oui', label: '✅ Acheter (−' + c.prix + ')' }, { id: 'non', label: 'Non merci', couleur: '#adb5bd' }]
             }, 'non', 40);
             if (r === 'oui') {
@@ -330,7 +418,7 @@
             F.son.perte();
             L.ui(P, { emoji: '💸', titre: 'Loyer !', texte: c.nom + ' appartient à ' + proprio.nom + ' : tu payes ' + l + '.', fond: '#5c1a1a' });
             L.ui(proprio, { emoji: '🤑', titre: 'Loyer encaissé !', texte: P.nom + ' te paye ' + l + ' pour ' + c.nom + '.', fond: '#1b4332', vibrer: 120 });
-            await banniere(P.nom + ' paye ' + l + ' à ' + proprio.nom, c.nom + (c.niveau ? ' · ' + (c.niveau === 4 ? 'palais' : c.niveau + ' villa(s)') : ''), proprio.couleur, 2);
+            await banniere(P.nom + ' paye ' + l + ' à ' + proprio.nom, c.nom + (c.niveau ? ' · ' + (c.niveau === 4 ? 'gratte-ciel' : c.niveau + ' étage(s)') : ''), proprio.couleur, 2);
             await payer(P, l, proprio);
             log(P.nom + ' paye ' + l + ' de loyer à ' + proprio.nom, '#ff4d6d');
             S.carte = null;
@@ -340,24 +428,24 @@
           await F.attendre(0.6);
         }
       } else if (c.type === 'taxe') {
-        await banniere(c.nom, P.nom + ' paye ' + c.montant + ' (pour le hamac au trésor)', '#6c757d', 1.8);
+        await banniere(c.nom, P.nom + ' paye ' + c.montant + ' (pour la fontaine aux vœux)', '#6c757d', 1.8);
         if (await payer(P, c.montant, null)) S.cagnotte += c.montant;
         log(P.nom + ' paye la taxe : ' + c.montant);
       } else if (c.type === 'hamac') {
         var g = S.cagnotte;
         if (g > 0) {
           argent(P, g); S.cagnotte = 0; F.son.etoile();
-          S.particules.gerbe(c.x, c.y, 40, { forme: 'coquillage', tmin: 6, tmax: 10, haut: 400 });
-          await banniere('Le trésor du hamac !', P.nom + ' récupère ' + g + ' pièces', '#ffbe0b', 2);
-          log(P.nom + ' gagne le trésor du hamac : ' + g, '#ffd166');
-        } else { await banniere('Petite sieste au hamac', 'Le trésor est vide pour l\'instant', '#ffbe0b', 1.5); }
+          S.particules.gerbe(c.x, c.y, 40, { forme: 'piece', tmin: 6, tmax: 10, haut: 400 });
+          await banniere('La fontaine aux vœux !', P.nom + ' récupère ' + g + ' pièces', '#ffbe0b', 2);
+          log(P.nom + ' vide la fontaine aux vœux : ' + g, '#ffd166');
+        } else { await banniere('La fontaine aux vœux', 'Elle est vide pour l\'instant', '#ffbe0b', 1.5); }
       } else if (c.type === 'vague') {
-        await banniere('Grande vague !', P.nom + ' est emporté sur l\'île déserte', '#0077b6', 1.8);
+        await banniere('Déviation !', P.nom + ' se retrouve dans l\'embouteillage', '#fb8500', 1.8);
         await allerIle(P);
       } else if (c.type === 'bouteille') {
         await bouteille(P);
       } else if (c.type === 'ile') {
-        log(P.nom + ' visite l\'île déserte');
+        log(P.nom + ' regarde passer les voitures');
         await F.attendre(0.5);
       } else if (c.type === 'depart') {
         await F.attendre(0.4);
@@ -370,7 +458,7 @@
       var b = S.pioche.pop();
       S.carte = { type: 'bouteille', b: b, t0: F.t };
       F.son.surprise();
-      L.ui(P, { emoji: '🍾', titre: 'Bouteille à la mer', texte: b.texte });
+      L.ui(P, { emoji: '✉️', titre: 'Enveloppe surprise', texte: b.texte });
       await F.attendre(2.4);
       var autres = actifs().filter(function (x) { return x !== P; });
       switch (b.effet) {
@@ -401,7 +489,7 @@
           await caseArrivee(P, 0);
           break;
       }
-      log('Bouteille : ' + b.texte);
+      log('Enveloppe : ' + b.texte);
       S.carte = null;
       await F.attendre(0.6);
     }
@@ -414,9 +502,9 @@
       S.phase = 'titre'; S.journal = []; S.cagnotte = 0; S.fin = null; S.t0 = F.t;
       F.musique('plateau');
       var chef = L.joueurs[0];
-      L.uiTous({ emoji: '🏝️', titre: 'Magnats des Îles', texte: chef.nom + ' choisit la durée de la partie…' }, chef);
+      L.uiTous({ emoji: '🏙️', titre: 'Magnats de la Ville', texte: chef.nom + ' choisit la durée de la partie…' }, chef);
       var d = await L.demander(chef, {
-        emoji: '🏝️', titre: 'Magnats des Îles', texte: 'Quelle durée ?',
+        emoji: '🏙️', titre: 'Magnats de la Ville', texte: 'Quelle durée ?',
         boutons: [
           { id: '12', label: '12 tours', sous: 'environ 30 min · le plus riche gagne' },
           { id: '20', label: '20 tours', sous: 'environ 50 min · le plus riche gagne' },
@@ -426,7 +514,7 @@
       S.maxTours = window.MAGNATS_TOURS || +d;
       S.phase = 'plateau';
       log('Chacun commence avec ' + ARGENT_DEPART + ' pièces');
-      await banniere('Magnats des Îles', 'Achète des lieux, construis des villas, encaisse les loyers !', '#2a9d8f', 2.4);
+      await banniere('Magnats de la Ville', 'Achète des rues, construis des immeubles, encaisse les loyers !', '#2a9d8f', 2.4);
       for (S.tour = 1; !L.arrete; S.tour++) {
         if (S.maxTours && S.tour > S.maxTours) break;
         if (S.maxTours && S.tour === S.maxTours) await banniere('Dernier tour !', '', '#d00000', 1.6);
@@ -498,18 +586,28 @@
     }
 
     function fond(c) {
-      var g = c.createRadialGradient(800, 450, 100, 800, 450, 950);
-      g.addColorStop(0, '#48cae4'); g.addColorStop(0.55, '#0096c7'); g.addColorStop(1, '#023e8a');
-      c.fillStyle = g; c.fillRect(0, 0, 1600, 900);
-      c.strokeStyle = 'rgba(255,255,255,.12)'; c.lineWidth = 3;
-      for (var i = 0; i < 18; i++) { var x = (i * 191 + F.t * 15) % 1700 - 50, y = (i * 137) % 900; c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + 20, y - 6, x + 40, y); c.stroke(); }
-      // île centrale
-      c.fillStyle = 'rgba(255,255,255,.25)'; c.beginPath(); c.ellipse(CX, CY, 600, 318, 0, 0, 7); c.fill();
-      c.fillStyle = '#f1d18a'; c.beginPath(); c.ellipse(CX, CY, 580, 302, 0, 0, 7); c.fill();
-      c.fillStyle = '#74c69d'; c.beginPath(); c.ellipse(CX, CY - 8, 530, 266, 0, 0, 7); c.fill();
-      c.fillStyle = 'rgba(45,106,79,.35)';
-      [[-360, -60], [380, -40], [-300, 110], [320, 120], [0, 150]].forEach(function (d) { c.beginPath(); c.ellipse(CX + d[0], CY + d[1], 70, 34, 0, 0, 7); c.fill(); });
-      [[-470, -20], [470, -10], [-300, -200], [300, -200]].forEach(function (d, k) { F.palmier(c, CX + d[0], CY + d[1], 0.9, k * 0.3); });
+      if (!S.decor || (S.decor.sans3d && decor3d && window.Kenney3D && Kenney3D.pret())) S.decor = decorVille();
+      c.drawImage(S.decor, 0, 0, 1600, 900);
+      // voitures qui circulent sur l'avenue du bas et les deux rues verticales
+      var COLS = ['#e63946', '#3a86ff', '#ffbe0b', '#06d6a0', '#8338ec', '#f4f1de'];
+      for (var i = 0; i < 6; i++) {
+        var sens = i % 2 ? 1 : -1, v = 60 + i * 11;
+        if (i < 3) {
+          var x = ((i * 597 + F.t * v * sens) % 1900 + 1900) % 1900 - 150;
+          voiture(c, x, RUES_Y[1] + (sens > 0 ? 12 : -12), COLS[i], sens, 0);
+        } else {
+          var y = ((i * 331 + F.t * v * sens) % 1100 + 1100) % 1100 - 100;
+          voiture(c, RUES_X[i % 2] + (sens > 0 ? -12 : 12), y, COLS[i], sens, Math.PI / 2);
+        }
+      }
+    }
+    function voiture(c, x, y, col, sens, angle) {
+      c.save(); c.translate(x, y); c.rotate(angle); c.scale(sens, 1);
+      c.fillStyle = 'rgba(0,0,0,.25)'; F.rr(c, -21, -6, 44, 16, 6); c.fill();
+      c.fillStyle = col; F.rr(c, -22, -10, 44, 18, 6); c.fill();
+      c.fillStyle = 'rgba(255,255,255,.75)'; F.rr(c, -4, -8, 14, 14, 3); c.fill();
+      c.fillStyle = '#fff3b0'; c.fillRect(19, -8, 3, 4); c.fillRect(19, 2, 3, 4);
+      c.restore();
     }
 
     function dessinerCase(c, cs) {
@@ -517,12 +615,12 @@
       var proprio = cs.proprio ? L.joueurs.filter(function (P) { return P.num === cs.proprio; })[0] : null;
       c.save();
       c.fillStyle = 'rgba(0,0,0,.28)'; F.rr(c, x + 3, y + 6, TW, TH, 14); c.fill();
-      var fondCase = { depart: '#80ed99', ile: '#f1d18a', hamac: '#ffd166', vague: '#90e0ef', bouteille: '#caf0f8', taxe: '#dee2e6', port: '#e0e1dd' }[cs.type] || '#fffdf7';
+      var fondCase = { depart: '#80ed99', ile: '#dee2e6', hamac: '#bde0fe', vague: '#ffd6a5', bouteille: '#fff1c1', taxe: '#dee2e6', port: '#e0e1dd' }[cs.type] || '#fffdf7';
       c.fillStyle = cs.hypo ? '#adb5bd' : fondCase; F.rr(c, x, y, TW, TH, 14); c.fill();
       if (cs.type === 'prop') { c.save(); F.rr(c, x, y, TW, TH, 14); c.clip(); c.fillStyle = GROUPES[cs.groupe]; c.fillRect(x, y, TW, 26); c.restore(); }
-      if (cs.type === 'port') { c.save(); F.rr(c, x, y, TW, TH, 14); c.clip(); c.fillStyle = '#1d3557'; c.fillRect(x, y, TW, 26); c.restore(); F.texte(c, 'PORT', cs.x, y + 14, 17, '#fff', { contour: false }); }
+      if (cs.type === 'port') { c.save(); F.rr(c, x, y, TW, TH, 14); c.clip(); c.fillStyle = '#1d3557'; c.fillRect(x, y, TW, 26); c.restore(); F.texte(c, 'TRAM', cs.x, y + 14, 17, '#fff', { contour: false }); }
       if (proprio) { c.lineWidth = 5; c.strokeStyle = proprio.couleur; F.rr(c, x, y, TW, TH, 14); c.stroke(); }
-      // villas
+      // étages
       if (cs.niveau) {
         for (var v = 0; v < (cs.niveau === 4 ? 1 : cs.niveau); v++) {
           var hx = x + 14 + v * 20, hy = y + 4;
@@ -530,7 +628,7 @@
           c.beginPath(); c.moveTo(hx, hy + 7); c.lineTo(hx + 7, hy); c.lineTo(hx + 14, hy + 7); c.lineTo(hx + 14, hy + 15); c.lineTo(hx, hy + 15); c.closePath(); c.fill();
           c.strokeStyle = '#1b1b2f'; c.lineWidth = 1.5; c.stroke();
         }
-        if (cs.niveau === 4) F.texte(c, 'PALAIS', x + 70, y + 12, 12, '#fff', { contour: false });
+        if (cs.niveau === 4) F.texte(c, 'TOUR', x + 70, y + 12, 12, '#fff', { contour: false });
       }
       var nomY = cs.type === 'prop' || cs.type === 'port' ? y + 46 : y + 30;
       var lignes = F.texteMultiligne(c, cs.nom, cs.x, nomY, TW - 14, 20, '#1b1b2f', { interligne: 1.1 });
@@ -539,19 +637,19 @@
         var txt = cs.hypo ? 'HYPOTHÉQUÉ' : (proprio ? 'loyer ' + loyer(cs) : String(cs.prix));
         F.texte(c, txt, cs.x, bas, 19, cs.hypo ? '#1b1b2f' : (proprio ? proprio.couleur === '#ffd166' ? '#9a6b00' : F.assombrir(proprio.couleur, 0.2) : '#495057'), { contour: false });
       } else if (cs.type === 'depart') F.texte(c, '+' + BONUS_DEPART + ' au passage', cs.x, bas, 17, '#1b4332', { contour: false });
-      else if (cs.type === 'hamac') F.texte(c, 'Trésor : ' + S.cagnotte, cs.x, bas, 18, '#7a4a00', { contour: false });
+      else if (cs.type === 'hamac') F.texte(c, 'Vœux : ' + S.cagnotte, cs.x, bas, 18, '#1d3557', { contour: false });
       else if (cs.type === 'taxe') F.texte(c, '−' + cs.montant, cs.x, bas, 19, '#d00000', { contour: false });
-      else if (cs.type === 'vague') F.texte(c, '→ île déserte', cs.x, bas, 17, '#023e8a', { contour: false });
-      else if (cs.type === 'ile') F.texte(c, 'simple visite', cs.x, bas, 17, '#7a4a00', { contour: false });
-      else if (cs.type === 'bouteille') F.texte(c, 'carte surprise', cs.x, bas, 17, '#0077b6', { contour: false });
+      else if (cs.type === 'vague') F.texte(c, '→ embouteillage', cs.x, bas, 17, '#9a3412', { contour: false });
+      else if (cs.type === 'ile') F.texte(c, 'simple visite', cs.x, bas, 17, '#495057', { contour: false });
+      else if (cs.type === 'bouteille') F.texte(c, 'carte surprise', cs.x, bas, 17, '#9a6b00', { contour: false });
       void lignes;
       c.restore();
     }
 
     function centre(c) {
-      F.texte(c, 'Magnats des Îles', CX, CY - 250, 58, '#fff', { contour: '#1b4332', epaisseur: 10 });
-      if (S.maxTours && S.tour) F.texte(c, 'Tour ' + Math.min(S.tour, S.maxTours) + ' / ' + S.maxTours, CX, CY - 200, 26, '#1b4332', { contour: false });
-      else if (S.tour) F.texte(c, 'Tour ' + S.tour + ' · jusqu\'à la ruine', CX, CY - 200, 26, '#1b4332', { contour: false });
+      F.texte(c, 'Magnats de la Ville', CX, CY - 250, 58, '#fff', { contour: '#1d3557', epaisseur: 10 });
+      if (S.maxTours && S.tour) F.texte(c, 'Tour ' + Math.min(S.tour, S.maxTours) + ' / ' + S.maxTours, CX, CY - 200, 26, '#fff', { contour: 'rgba(0,0,0,.6)', epaisseur: 5 });
+      else if (S.tour) F.texte(c, 'Tour ' + S.tour + ' · jusqu\'à la ruine', CX, CY - 200, 26, '#fff', { contour: 'rgba(0,0,0,.6)', epaisseur: 5 });
       if (S.des) {
         var r1 = S.des.roule ? F.alea(-0.3, 0.3) : 0, r2 = S.des.roule ? F.alea(-0.3, 0.3) : 0;
         var sc = S.des.roule ? 1 : 1 + Math.max(0, 0.3 - (F.t - S.des.t0) * 2);
@@ -585,7 +683,7 @@
           c.fillStyle = cs.groupe ? GROUPES[cs.groupe] : '#e0e1dd';
           c.fillRect(x + 86 + k * 15, y + 88, 12, 12);
         });
-        if (P.ile > 0) F.texte(c, 'île', x + w - 30, y + 30, 20, '#48cae4', { contour: false });
+        if (P.ile > 0) F.texte(c, '🚧', x + w - 30, y + 30, 22, '#fff', { contour: false });
       });
     }
 
@@ -597,23 +695,23 @@
         c.fillStyle = 'rgba(0,0,0,.35)'; F.rr(c, -186, -196, 380, 400, 24); c.fill();
         c.fillStyle = '#fffdf7'; F.rr(c, -190, -200, 380, 400, 24); c.fill();
         c.save(); F.rr(c, -190, -200, 380, 400, 24); c.clip(); c.fillStyle = col; c.fillRect(-190, -200, 380, 90); c.restore();
-        F.texte(c, cs.type === 'port' ? 'PORT' : 'TITRE DE PROPRIÉTÉ', 0, -176, 16, '#fff', { contour: false });
+        F.texte(c, cs.type === 'port' ? 'STATION DE TRAM' : 'TITRE DE PROPRIÉTÉ', 0, -176, 16, '#fff', { contour: false });
         F.texteMultiligne(c, cs.nom, 0, -138, 340, 30, '#fff', { centrerV: true });
         var lignes;
-        if (cs.type === 'port') lignes = [['1 port', 25], ['2 ports', 50], ['3 ports', 100], ['4 ports', 200]];
-        else lignes = [['Loyer', Math.round(cs.prix * 0.1)], ['Groupe complet', Math.round(cs.prix * 0.1) * 2], ['1 villa', Math.round(cs.prix * 0.05) * 10], ['2 villas', Math.round(cs.prix * 0.15) * 10], ['3 villas', Math.round(cs.prix * 0.32) * 10], ['Palais', Math.round(cs.prix * 0.48) * 10]];
+        if (cs.type === 'port') lignes = [['1 station', 25], ['2 stations', 50], ['3 stations', 100], ['4 stations', 200]];
+        else lignes = [['Loyer', Math.round(cs.prix * 0.1)], ['Groupe complet', Math.round(cs.prix * 0.1) * 2], ['1 étage', Math.round(cs.prix * 0.05) * 10], ['2 étages', Math.round(cs.prix * 0.15) * 10], ['3 étages', Math.round(cs.prix * 0.32) * 10], ['Gratte-ciel', Math.round(cs.prix * 0.48) * 10]];
         lignes.forEach(function (l, i) {
           F.texte(c, l[0], -160, -80 + i * 34, 22, '#495057', { align: 'left', contour: false, poids: 600 });
           F.texte(c, String(l[1]), 160, -80 + i * 34, 22, '#1b1b2f', { align: 'right', contour: false });
         });
-        F.texte(c, 'Prix : ' + cs.prix + (cs.type === 'prop' ? ' · villa : ' + coutVilla(cs) : ''), 0, 170, 24, '#1b1b2f', { contour: false });
+        F.texte(c, 'Prix : ' + cs.prix + (cs.type === 'prop' ? ' · étage : ' + coutVilla(cs) : ''), 0, 170, 24, '#1b1b2f', { contour: false });
       } else {
         c.rotate(-0.03);
         c.fillStyle = 'rgba(0,0,0,.35)'; F.rr(c, -256, -136, 520, 280, 26); c.fill();
-        var g = c.createLinearGradient(0, -140, 0, 140); g.addColorStop(0, '#fff3d6'); g.addColorStop(1, '#f1d18a');
+        var g = c.createLinearGradient(0, -140, 0, 140); g.addColorStop(0, '#fffaf0'); g.addColorStop(1, '#f3e3c3');
         c.fillStyle = g; F.rr(c, -260, -140, 520, 280, 26); c.fill();
         c.lineWidth = 4; c.strokeStyle = '#c9a26b'; F.rr(c, -248, -128, 496, 256, 20); c.stroke();
-        F.texte(c, 'Bouteille à la mer', 0, -88, 34, '#7a4a00', { contour: false });
+        F.texte(c, '✉️ Enveloppe surprise', 0, -88, 34, '#7a4a00', { contour: false });
         F.texteMultiligne(c, k.b.texte, 0, 10, 440, 30, '#1b1b2f', { centrerV: true, poids: 600 });
       }
       c.restore();
@@ -638,10 +736,10 @@
     }
 
     function titre(c) {
-      c.fillStyle = 'rgba(3,4,94,.6)'; c.fillRect(0, 0, 1600, 900);
+      c.fillStyle = 'rgba(16,24,40,.62)'; c.fillRect(0, 0, 1600, 900);
       var t = F.t - S.t0;
-      F.texte(c, 'Magnats des Îles', 800, 250 + Math.sin(t * 2) * 8, 130, '#ffd166', { contour: '#1b4332', epaisseur: 18 });
-      F.texte(c, 'Achète des lieux de l\'île, construis des villas et des palais, encaisse les loyers !', 800, 360, 34, '#fff', { contour: false });
+      F.texte(c, 'Magnats de la Ville', 800, 250 + Math.sin(t * 2) * 8, 120, '#ffd166', { contour: '#1d3557', epaisseur: 18 });
+      F.texte(c, 'Achète des rues, construis des étages et des gratte-ciel, encaisse les loyers !', 800, 360, 34, '#fff', { contour: false });
       var n = L.joueurs.length;
       L.joueurs.forEach(function (P, k) {
         var x = 800 - (n - 1) * 130 + k * 260;
@@ -654,8 +752,8 @@
     function fin(c) {
       var f = S.fin, q = Math.min(1, (F.t - f.t0) * F.V / 0.5);
       c.fillStyle = 'rgba(10,10,30,' + 0.88 * q + ')'; c.fillRect(0, 0, 1600, 900);
-      F.texte(c, 'Fin de la partie !', 800, 120, 86, '#ffd166', { contour: '#1b4332', epaisseur: 14 });
-      F.texte(c, f.ordre[0].nom + ' est le grand magnat des îles !', 800, 210, 46, '#fff');
+      F.texte(c, 'Fin de la partie !', 800, 120, 86, '#ffd166', { contour: '#1d3557', epaisseur: 14 });
+      F.texte(c, f.ordre[0].nom + ' est le grand magnat de la ville !', 800, 210, 46, '#fff');
       f.ordre.forEach(function (P, k) {
         var y = 290 + k * 130, x = 280 + (1 - F.ease.back(Math.min(1, Math.max(0, q * 2 - k * 0.2)))) * -1600;
         c.fillStyle = P.rang === 1 ? 'rgba(255,209,102,.95)' : 'rgba(255,255,255,.14)';
@@ -680,8 +778,8 @@
   }
 
   Console.ajouterJeu({
-    id: 'magnats', nom: 'Magnats des Îles', emoji: '🏝️',
-    description: 'Achète des lieux, construis des villas, encaisse les loyers. Le plus riche gagne !',
+    id: 'magnats', nom: 'Magnats de la Ville', emoji: '🏙️',
+    description: 'Achète des rues, construis des immeubles, encaisse les loyers. Le plus riche gagne !',
     min: 2, max: 4, perso: true, barre: false, creer: creer
   });
 })(Fiesta);

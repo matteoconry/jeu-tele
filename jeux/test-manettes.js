@@ -11,7 +11,7 @@ Console.ajouterJeu({
   id: 'test-manettes',
   nom: 'Test des manettes',
   emoji: '🕹️',
-  description: 'Chacun déplace son carré sur l\'île. A fait un flash.',
+  description: 'Chacun déplace son carré sur l\'écran. A fait un flash.',
   min: 1,
   max: 4,
   boutons: ['A'],
