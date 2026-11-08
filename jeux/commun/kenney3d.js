@@ -184,7 +184,38 @@ var Kenney3D = (function () {
     return cv;
   }
 
+  // Décor vu de 3/4 (caméra orthographique inclinée) qui tombe pile sur un plateau 2D :
+  // un point au sol (x, y) du plateau se retrouve au pixel ((x - x0) * echelle, (y - y0) * echelle).
+  // objets : [{ nom, x, y, echelle, rot, couleur, teintes }] ; opts : { x0, y0, largeur, hauteur, echelle, phi, sol }
+  var PHI = 0.95;
+  function vueOblique(objets, opts) {
+    var phi = opts.phi || PHI, sp = Math.sin(phi), e = opts.echelle || 1;
+    var sc = lumieres(new THREE.Scene(), opts.lumiere);
+    if (opts.sol) {
+      var plan = new THREE.Mesh(new THREE.PlaneGeometry(opts.largeur * 3, opts.hauteur * 3 / sp), new THREE.MeshLambertMaterial({ color: opts.sol }));
+      plan.rotation.x = -Math.PI / 2;
+      plan.position.set(opts.x0 + opts.largeur / 2, 0, (opts.y0 + opts.hauteur / 2) / sp);
+      sc.add(plan);
+    }
+    objets.forEach(function (o) {
+      var m = copie(o.nom, o.echelle || 1);
+      if (o.couleur) recolorer(m, o.couleur, o.teintes);
+      m.position.set(o.x, o.h || 0, o.y / sp);
+      m.rotation.y = o.rot || 0;
+      if (o.etire) m.scale.z *= o.etire;
+      sc.add(m);
+    });
+    var w = Math.round(opts.largeur * e), h = Math.round(opts.hauteur * e);
+    var cam = new THREE.OrthographicCamera(-opts.largeur / 2, opts.largeur / 2, opts.hauteur / 2, -opts.hauteur / 2, 1, 20000);
+    var cx = opts.x0 + opts.largeur / 2, cz = (opts.y0 + opts.hauteur / 2) / sp;
+    cam.position.set(cx, Math.sin(phi) * 5000, cz + Math.cos(phi) * 5000);
+    cam.lookAt(cx, 0, cz);
+    cam.updateProjectionMatrix();
+    return image(sc, cam, w, h, opts.sol ? 0x000000 : undefined);
+  }
+
   return {
+    vueOblique: vueOblique,
     charger: charger, copie: copie, recolorer: recolorer, image: image, sprite: sprite, lumieres: lumieres,
     modele: function (nom) { return M[nom]; },
     pret: function () { return !!R; },
