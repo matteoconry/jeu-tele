@@ -10,8 +10,11 @@ Une petite « console » de jeux pour la télé, avec les téléphones comme man
 ## Jeux du catalogue
 - **Fiesta Royale** (2 à 4 joueurs) : jeu de plateau autour d'un château, dans une prairie entourée de forêt. Dé de 1 à 10,
   cases bonus (+3), pièges (−3), surprises, duels, étoiles à acheter (20 pièces d'or), un raccourci par le château, un mini-jeu
-  à la fin de chaque tour, bonus et podium final. 5 mini-jeux : bloc à pièces, drapeau réflexe, cloches qui chantent,
-  course en sac, chasse aux pièces. Fichiers dans `jeux/fiesta/`. Décor et personnages en modèles 3D Kenney, sons synthétisés.
+  à la fin de chaque tour, bonus et podium final. 17 mini-jeux : bloc à pièces, drapeau réflexe, cloches qui chantent,
+  course en sac, chasse aux pièces, pluie de pièces, sablier caché, lancer d'anneau, couleurs farceuses, plateau glissant,
+  bombe farceuse, trouve l'intrus, calcul du roi, tour du château, ballon qui gonfle, saut à la corde, compte les moutons
+  (17 au total, tirés dans une pioche pour ne pas revoir le même trop tôt ; `jeux/fiesta/minijeux.js` et `minijeux2.js`).
+  Fichiers dans `jeux/fiesta/`. Décor et personnages en modèles 3D Kenney, sons synthétisés.
 - **Le Grand Quiz** (1 à 4 joueurs) : culture générale, 145 questions dans 8 thèmes (`jeux/quiz/questions.js`, facile à enrichir).
   Réponse secrète sur le téléphone, 15 s par question, points selon la rapidité et bonus de série.
 - **Dino Sprint** (1 à 4 joueurs) : course sans fin, un couloir par joueur, mêmes obstacles pour tous.

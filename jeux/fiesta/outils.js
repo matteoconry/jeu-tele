@@ -126,7 +126,7 @@ var Fiesta = window.Fiesta || {};
 
   // ---------- Sprites 3D (modèles Kenney, voir jeux/commun/kenney3d.js) ----------
   // Chargés en arrière-plan ; tant qu'ils ne sont pas prêts, on dessine la version 2D.
-  var SPRITES = ['plateforme/character', 'plateforme/coin', 'arene/trophy', 'plateforme/block-coin', 'arene/tree', 'plateforme/flag', 'arene/wall', 'arene/column'];
+  var SPRITES = ['plateforme/character', 'plateforme/coin', 'arene/trophy', 'plateforme/block-coin', 'arene/tree', 'plateforme/flag', 'arene/wall', 'arene/column', 'arene/character-soldier'];
   var sprites3d = false;
   F.prechargerSprites = function () {
     if (!window.Kenney3D) return;

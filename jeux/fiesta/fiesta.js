@@ -339,8 +339,13 @@
 
     // ---------- Mini-jeux ----------
     function choisirMiniJeu() {
-      var l = F.MINIJEUX.filter(function (m) { return m.id !== S.dernierMJ; });
-      var m = F.choisir(l);
+      // une pioche mélangée : on voit tous les mini-jeux avant d'en revoir un
+      if (window.FIESTA_MJ) return F.MINIJEUX.filter(function (m) { return m.id === window.FIESTA_MJ; })[0] || F.MINIJEUX[0];
+      if (!S.piocheMJ || !S.piocheMJ.length) {
+        S.piocheMJ = F.melanger(F.MINIJEUX.slice());
+        if (S.piocheMJ.length > 1 && S.piocheMJ[S.piocheMJ.length - 1].id === S.dernierMJ) S.piocheMJ.unshift(S.piocheMJ.pop());
+      }
+      var m = S.piocheMJ.pop();
       S.dernierMJ = m.id;
       return m;
     }
