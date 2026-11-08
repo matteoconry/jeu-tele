@@ -24,6 +24,10 @@ Une petite « console » de jeux pour la télé, avec les téléphones comme man
 - **Poker** (2 à 4 joueurs) : Texas Hold'em avec des jetons pour rire. Cartes cachées sur le téléphone, blindes qui doublent toutes les 6 mains, relances, tapis, pots partagés.
 - **Turbo Karts** (1 à 4 joueurs) : course en vraie 3D (three.js + modèles Kenney), écran partagé, 6 pilotes (l'ordinateur complète). 3 circuits en tuiles (Forêt des Pins, Centre-Ville, Arène Antique), objets (turbo, huile, missile, bouclier), plaques turbo, Grand Prix. La qualité baisse toute seule si la télé rame. Fichiers `jeux/kart/kart.js` (règles) et `jeux/kart/rendu3d.js` (affichage).
 - **Le Défi Dessin** (2 à 4 joueurs) : un mot, tout le monde le dessine sur son téléphone en 60 s, les dessins sont dévoilés à la télé et chacun vote pour le meilleur (pas le sien).
+- **HexGL** (solo) : le vrai jeu libre de course futuriste de Thibaut « BKcore » Despoulain, intégré tel quel (`jeux/hexgl/`).
+  Le téléphone sert de volant : on le tient en paysage et on le penche pour tourner (ou boutons ◀ ▶), gaz automatique, aérofreins
+  pour les virages serrés. 3 qualités d'image (Fluide pour la télé, Très belle pour un ordi en HDMI), 2 niveaux, record sauvegardé.
+  Code télé : `jeux/hexgl.js` ; volant du téléphone : `js/volant.js`.
 - **Test des manettes** : chacun déplace son carré.
 
 ## Organisation des fichiers
