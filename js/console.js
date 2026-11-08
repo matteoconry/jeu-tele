@@ -404,8 +404,8 @@ var Console = (function () {
     if (!n) return;
     if (k === 37) selection = (selection + n - 1) % n;
     else if (k === 39) selection = (selection + 1) % n;
-    else if (k === 38) selection = (selection + n - 4) % n;
-    else if (k === 40) selection = (selection + 4) % n;
+    else if (k === 38) selection = (selection + n - 5) % n;
+    else if (k === 40) selection = (selection + 5) % n;
     else if (k === 13) { lancer(jeux[selection].id, null); return; }
     else return;
     e.preventDefault();
