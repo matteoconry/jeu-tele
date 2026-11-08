@@ -22,6 +22,12 @@ Texte de la licence : https://creativecommons.org/publicdomain/zero/1.0/
 | `lib/peerjs.min.js` | [PeerJS](https://peerjs.com) 1.5.4 | MIT |
 | `lib/qrcode.js` | qrcode-generator 1.4.4 (Kazuhiko Arase) | MIT |
 
+## Jeux libres intégrés
+
+| Dossier | Jeu | Auteur | Licence |
+| --- | --- | --- | --- |
+| `jeux/hexgl/` | [HexGL](https://github.com/BKcore/HexGL), course futuriste en 3D | Thibaut « BKcore » Despoulain (vaisseau : Charnel, piste : Nobiax, sons : voir `jeux/hexgl/audio/LICENSE`) | MIT, certains fichiers en CC BY-NC 3.0 : usage non commercial. Détails et liste des changements dans `jeux/hexgl/LISEZMOI.md` |
+
 ## Polices
 
 - [Fredoka](https://fonts.google.com/specimen/Fredoka) (Google Fonts), licence SIL Open Font License 1.1.

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<!--
+  HexGL (Thibaut « BKcore » Despoulain, https://github.com/BKcore/HexGL), adapté pour la console Jeu télé.
+  Cette page remplace le menu d'origine : elle est ouverte dans un cadre par jeux/hexgl.js,
+  qui lui transmet les commandes du téléphone (window.HexTel). Licences : voir LICENSE et LISEZMOI.md.
+-->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>HexGL</title>
+<link rel="stylesheet" href="css/fonts.css">
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; color: #fff;
+    font-family: 'BebasNeueRegular', sans-serif; }
+  canvas { pointer-events: none; width: 100%; display: block; }
+  #main { position: absolute; inset: 0; }
+  #overlay { position: absolute; z-index: 5; top: 0; left: 0; width: 100%; pointer-events: none; }
+  #chargement { position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 4vh; background: #000 url(css/bg.jpg) center / cover; }
+  #chargement img { width: 46vw; max-width: 900px; }
+  #barre { width: 40vw; height: 1.2vh; background: rgba(255,255,255,.15); border-radius: 1vh; overflow: hidden; }
+  #progression { width: 0; height: 100%; background: #46c3ff; transition: width .2s; }
+  #chargement .txt { font-size: 4vh; letter-spacing: .1em; }
+  #chargement .credit { position: absolute; bottom: 3vh; font-size: 2.4vh; opacity: .7; letter-spacing: .05em; }
+  #resultat { position: absolute; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center;
+    background: rgba(0, 8, 20, .72); text-align: center; }
+  #resultat .boite { padding: 4vh 6vw; border: .3vh solid #46c3ff; border-radius: 2vh; background: rgba(0, 20, 40, .85); }
+  #resultat h1 { margin: 0; font-size: 11vh; letter-spacing: .08em; color: #46c3ff; font-weight: normal; }
+  #resultat .temps { font-size: 9vh; }
+  #resultat .tours { font-size: 3.6vh; opacity: .85; margin-top: 1vh; }
+  #resultat .record { font-size: 4.4vh; color: #ffd166; margin-top: 2vh; }
+  #resultat .aide { font-size: 3vh; opacity: .7; margin-top: 3vh; letter-spacing: .05em; }
+</style>
+</head>
+<body>
+<div id="main"></div>
+<div id="overlay"></div>
+
+<div id="chargement">
+  <img src="css/title.png" alt="HexGL">
+  <div id="barre"><div id="progression"></div></div>
+  <div class="txt" id="txtChargement">Chargement de la course…</div>
+  <div class="credit">HexGL par Thibaut « BKcore » Despoulain · jeu libre adapté pour la télé</div>
+</div>
+
+<div id="resultat"><div class="boite">
+  <h1 id="resTitre">Arrivée</h1>
+  <div class="temps" id="resTemps"></div>
+  <div class="tours" id="resTours"></div>
+  <div class="record" id="resRecord"></div>
+  <div class="aide">Sur le téléphone : Rejouer, ou Menu pour revenir à la console</div>
+</div></div>
+
+<script src="libs/Three.dev.js"></script>
+<script src="libs/ShaderExtras.js"></script>
+<script src="libs/postprocessing/EffectComposer.js"></script>
+<script src="libs/postprocessing/RenderPass.js"></script>
+<script src="libs/postprocessing/BloomPass.js"></script>
+<script src="libs/postprocessing/ShaderPass.js"></script>
+<script src="libs/postprocessing/MaskPass.js"></script>
+<script src="bkcore.coffee/Timer.js"></script>
+<script src="bkcore.coffee/ImageData.js"></script>
+<script src="bkcore.coffee/Utils.js"></script>
+<script src="bkcore/threejs/RenderManager.js"></script>
+<script src="bkcore/threejs/Shaders.js"></script>
+<script src="bkcore/threejs/Particles.js"></script>
+<script src="bkcore/threejs/Loader.js"></script>
+<script src="bkcore/Audio.js"></script>
+<script src="bkcore/hexgl/HUD.js"></script>
+<script src="bkcore/hexgl/RaceData.js"></script>
+<script src="bkcore/hexgl/ShipControls.js"></script>
+<script src="bkcore/hexgl/ShipEffects.js"></script>
+<script src="bkcore/hexgl/CameraChase.js"></script>
+<script src="bkcore/hexgl/Gameplay.js"></script>
+<script src="bkcore/hexgl/tracks/Cityscape.js"></script>
+<script src="bkcore/hexgl/HexGL.js"></script>
+<script>
+/*
+ * Pont entre la console (page parente) et HexGL.
+ *   HexTel.commande({v, gaz, ag, ad})  volant du téléphone
+ *   HexTel.recommencer()               relance la course
+ *   HexTel.son(oui)                    coupe ou remet le son
+ *   HexTel.surPret / surFin            rappels posés par jeux/hexgl.js
+ */
+var HexTel = (function () {
+  'use strict';
+  var p = new URLSearchParams(location.search);
+  var qualite = Math.max(0, Math.min(3, parseInt(p.get('qualite'), 10) || 0));
+  var difficulte = p.get('difficulte') === '1' ? 1 : 0;
+  var hexGL = null, pret = false, fini = false;
+  var T = {
+    surPret: null, surFin: null,
+    estPret: function () { return pret; },
+    commande: function (c) {
+      if (!pret) return;
+      var sc = hexGL.components.shipControls;
+      sc.volant = Math.max(-1, Math.min(1, +c.v || 0));
+      sc.key.forward = !!c.gaz;
+      sc.key.ltrigger = !!c.ag;
+      sc.key.rtrigger = !!c.ad;
+    },
+    recommencer: function () {
+      if (!pret) return;
+      var g = hexGL.gameplay, sc = hexGL.components.shipControls;
+      document.getElementById('resultat').style.display = 'none';
+      fini = false;
+      g.lapTimes = []; g.lapTimeElapsed = 0; g.result = g.results.NONE;
+      sc.falling = false;
+      hexGL.active = true;
+      hexGL.restart();
+    },
+    son: function (oui) {
+      var ctx = bkcore.Audio._ctx;
+      if (!ctx) return;
+      try { if (oui) ctx.resume(); else ctx.suspend(); } catch (e) {}
+    }
+  };
+
+  function temps(ms) {
+    var t = bkcore.Timer.msToTimeString(ms);
+    return t.m + "'" + t.s + "''" + t.ms;
+  }
+
+  // Fin de course : on affiche le résultat par-dessus la piste (qui reste affichée) au lieu de recharger la page.
+  function finDeCourse(total, tours) {
+    if (fini) return;
+    fini = true;
+    var g = hexGL.gameplay;
+    var detruit = g.result === g.results.DESTROYED;
+    var record = null, nouveau = false;
+    if (!detruit) {
+      var cle = 'jeutele-hexgl-record-' + difficulte;
+      try { record = parseInt(localStorage.getItem(cle), 10) || null; } catch (e) {}
+      if (!record || total < record) { nouveau = true; record = total; try { localStorage.setItem(cle, String(total)); } catch (e) {} }
+    }
+    document.getElementById('resTitre').textContent = detruit ? 'Vaisseau détruit' : 'Arrivée !';
+    document.getElementById('resTemps').textContent = detruit ? '' : temps(total);
+    document.getElementById('resTours').textContent = detruit ? 'Ton bouclier est tombé à zéro. Évite les murs !'
+      : (tours || []).slice(0, 3).map(function (t, i) { return 'Tour ' + (i + 1) + ' : ' + temps(t); }).join('   ·   ');
+    document.getElementById('resRecord').textContent = detruit ? '' : (nouveau ? '🏆 Nouveau record !' : 'Record : ' + temps(record));
+    document.getElementById('resultat').style.display = 'flex';
+    if (T.surFin) T.surFin({ detruit: detruit, temps: detruit ? null : temps(total), record: record ? temps(record) : null, nouveau: nouveau });
+  }
+
+  function lancer() {
+    if (typeof THREE === 'undefined') return;
+    hexGL = new bkcore.hexgl.HexGL({
+      document: document,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      container: document.getElementById('main'),
+      overlay: document.getElementById('overlay'),
+      gameover: null,
+      quality: qualite,
+      difficulty: difficulte,
+      hud: true,
+      controlType: 5, // 5 = téléphone de la console (aucun contrôleur d'origine)
+      godmode: 0,
+      track: 'Cityscape'
+    });
+    hexGL.displayScore = finDeCourse;
+    window.hexGL = hexGL;
+    hexGL.load({
+      onLoad: function () {
+        hexGL.init();
+        hexGL.components.shipControls.volant = 0;
+        document.getElementById('chargement').style.display = 'none';
+        hexGL.start();
+        pret = true;
+        if (T.surPret) T.surPret();
+      },
+      onError: function (s) {
+        console.error('Erreur de chargement : ' + s);
+        document.getElementById('txtChargement').textContent = 'Erreur de chargement (' + s + ')';
+      },
+      onProgress: function (pr) {
+        document.getElementById('progression').style.width = (pr.loaded / pr.total * 100) + '%';
+      }
+    });
+  }
+
+  try { lancer(); }
+  catch (e) {
+    console.error(e);
+    document.getElementById('txtChargement').textContent = 'Cette télé ne sait pas afficher HexGL (WebGL).';
+  }
+  return T;
+})();
+</script>
+</body>
+</html>
