@@ -114,3 +114,35 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 .perso-palette { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 520px; }
 .perso-palette button { width: 38px; height: 38px; border-radius: 50%; border: 3px solid rgba(255,255,255,.35); font-size: 18px; color: #fff; background: #343a40; }
 .perso-palette .pastille-c.active { border-color: #fff; transform: scale(1.15); box-shadow: 0 0 0 3px #ffd166; }
+
+/* Petit bac : saisie */
+.bac { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 10px; }
+.bac-tete { display: flex; align-items: center; gap: 14px; text-align: left; }
+.bac-lettre { width: 78px; height: 78px; flex: none; border-radius: 18px; background: #fdfaf2; color: #1d3557; font-size: 56px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 0 rgba(0,0,0,.35); }
+.bac-info { display: flex; flex-direction: column; gap: 2px; font-size: 14px; opacity: .9; }
+.bac-info b { font-size: 20px; }
+.bac-bandeau { background: #e63946; color: #fff; font-weight: 800; font-size: 18px; padding: 10px; border-radius: 12px; text-align: center;
+  position: sticky; top: 0; z-index: 2; }
+.bac-liste { display: flex; flex-direction: column; gap: 8px; }
+.bac-ligne { display: flex; flex-direction: column; gap: 4px; text-align: left; }
+.bac-cat { font-size: 14px; font-weight: 700; opacity: .85; text-transform: uppercase; letter-spacing: .5px; }
+.bac-champ { position: relative; display: block; }
+.bac-champ input { width: 100%; font: inherit; font-size: 20px; padding: 12px 44px 12px 14px; border-radius: 12px; border: 3px solid transparent;
+  background: #fdfaf2; color: #1d3557; -webkit-user-select: text; user-select: text; outline: none; }
+.bac-champ input:focus { border-color: var(--couleur); }
+.bac-champ.faux input { border-color: #e63946; }
+.bac-champ.bon input { border-color: #06d6a0; }
+.bac-ok { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 20px; }
+.bac-stop { background: #e63946; color: #fff; font-size: 26px; margin-top: 6px; }
+.bac-seche { background: rgba(255,255,255,.12); padding: 12px; border-radius: 14px; font-size: 16px; font-weight: 700; }
+
+/* Petit bac : vote (touche = refuser) */
+.bascules { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 6px; }
+.bascule-groupe { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; opacity: .75; text-align: left; margin-top: 8px; }
+.bascule { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; background: rgba(255,255,255,.12); text-align: left; }
+.bascule .mot { flex: 1; font-size: 19px; font-weight: 800; }
+.bascule .qui { font-size: 13px; font-weight: 700; }
+.bascule .avis { font-size: 24px; }
+.bascule.refuse { background: rgba(230,57,70,.45); }
+.bascule.refuse .mot { text-decoration: line-through; }
