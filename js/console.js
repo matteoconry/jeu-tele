@@ -12,9 +12,9 @@
 var Console = (function () {
   'use strict';
   // À augmenter à chaque mise en ligne qui touche la manette : un téléphone avec une autre version se recharge tout seul.
-  var VERSION = 10;
+  var VERSION = 11;
 
-  var COULEURS = ['#ff6b35', '#4ecdc4', '#ffd166', '#c77dff', '#80ed99', '#ff8fab'];
+  var COULEURS = ['#ff6b35', '#4ecdc4', '#ffd166', '#c77dff', '#80ed99', '#ff8fab', '#4895ef', '#e9edc9'];
   var PREFIXE = 'jeutele-mc-';
   var LETTRES = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   var MAX_PLACES = 4;
@@ -199,7 +199,7 @@ var Console = (function () {
 
   // ---------- Paramètres ----------
   var DESCR_PARAMS = {
-    maxJoueurs: { nom: 'Joueurs max', valeurs: [2, 3, 4] },
+    maxJoueurs: { nom: 'Joueurs max', valeurs: [2, 3, 4, 5, 6, 7, 8] },
     son: { nom: 'Son', valeurs: [true, false] },
     latence: { nom: 'Afficher la latence', valeurs: [true, false] }
   };
@@ -224,11 +224,11 @@ var Console = (function () {
   function jeuxPourTelephone() {
     var n = connectes().length;
     return jeux.map(function (d) {
-      var ok = d.dispo && n >= d.min;
+      var ok = d.dispo && n >= d.min && n <= d.max;
       return {
         id: d.id, nom: d.nom, emoji: d.emoji || '🎮', description: d.description || '', vignette: d.vignette, fond: d.fond,
         min: d.min, max: d.max, jouable: ok,
-        raison: !d.dispo ? 'Bientôt' : (n < d.min ? 'Il faut ' + d.min + ' joueur' + (d.min > 1 ? 's' : '') : '')
+        raison: !d.dispo ? 'Bientôt' : (n < d.min ? 'Il faut ' + d.min + ' joueur' + (d.min > 1 ? 's' : '') : n > d.max ? d.max + ' joueur' + (d.max > 1 ? 's' : '') + ' maximum' : '')
       };
     });
   }
@@ -240,6 +240,7 @@ var Console = (function () {
     if (!def) return;
     if (!def.dispo) { toast(def.nom + ' : bientôt disponible'); return; }
     if (connectes().length < def.min) { toast(def.nom + ' : il faut ' + def.min + ' joueur' + (def.min > 1 ? 's' : '')); return; }
+    if (connectes().length > def.max) { toast(def.nom + ' : ' + def.max + ' joueurs maximum'); return; }
 
     $('menu').className = 'cache';
     $('nomJeu').textContent = (def.emoji || '') + ' ' + def.nom;
@@ -315,6 +316,7 @@ var Console = (function () {
       }
     }
     $('listeJoueurs').innerHTML = h;
+    $('listeJoueurs').className = places > 4 ? 'compact' : ''; // 5 à 8 joueurs : sur deux colonnes
   }
   function majJoueursLegers() {
     // Mise à jour de la latence sans tout redessiner.

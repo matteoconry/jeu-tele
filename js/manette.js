@@ -1,7 +1,7 @@
 /* Manette sur le téléphone : profil, menu (catalogue + réglages), pad en jeu. */
 (function () {
   'use strict';
-  var VERSION = 10; // doit être égal à VERSION dans js/console.js
+  var VERSION = 11; // doit être égal à VERSION dans js/console.js
 
   function $(id) { return document.getElementById(id); }
   function lire(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -169,6 +169,7 @@
     // Volant pour les jeux de course (js/volant.js).
     if (ui && ui.volant && window.Volant) { $('perso').style.background = ui.fond || ''; Volant.afficher($('perso'), ui, envoyer, vibrer); return; }
     if (window.Volant) Volant.arreter();
+    $('perso').style.justifyContent = ui && (ui.bac || ui.bascules) ? 'flex-start' : '';
     if (!ui) { $('perso').innerHTML = '<div class="perso-texte">Prépare-toi…</div>'; return; }
     var h = '';
     if (ui.emoji) h += '<div class="perso-emoji">' + ui.emoji + '</div>';
@@ -176,6 +177,20 @@
     if (ui.texte) h += '<div class="perso-texte">' + echapper(ui.texte) + '</div>';
     // Cartes (main d'un jeu de cartes) : touchables si ui.cartes.choix
     var cartes = ui.cartes, choisies = {};
+    // Petit bac : une case de saisie par catégorie (le jeu gère ses propres boutons).
+    if (ui.bac) { $('perso').innerHTML = h; $('perso').style.background = ui.fond || ''; remplirBac(ui); return; }
+    // Liste de réponses à accepter / refuser (vote du petit bac). Touchées = refusées, envoyées dans sel.
+    if (ui.bascules) {
+      var groupe = null;
+      h += '<div class="bascules">';
+      ui.bascules.forEach(function (x) {
+        if (x.groupe !== groupe) { groupe = x.groupe; h += '<div class="bascule-groupe">' + echapper(groupe) + '</div>'; }
+        h += '<button class="bascule" data-c="' + echapper(x.id) + '"><span class="mot">' + echapper(x.texte) + '</span>' +
+          '<span class="qui" style="color:' + (x.couleur || '#fff') + '">' + echapper(x.sous || '') + '</span><span class="avis">👍</span></button>';
+      });
+      if (!ui.bascules.length) h += '<div class="perso-texte">Rien à vérifier cette fois.</div>';
+      h += '</div>';
+    }
     if (cartes && cartes.liste) {
       h += '<div class="perso-cartes' + (cartes.grandes ? ' grandes' : '') + (cartes.choix ? ' choix' : '') + '">';
       cartes.liste.forEach(function (k) {
@@ -225,6 +240,17 @@
         });
       });
     }
+    if (ui.bascules) {
+      $('perso').querySelectorAll('.bascule').forEach(function (el) {
+        el.addEventListener('click', function () {
+          var id = el.getAttribute('data-c');
+          if (choisies[id]) delete choisies[id]; else choisies[id] = true;
+          el.classList.toggle('refuse', !!choisies[id]);
+          el.querySelector('.avis').textContent = choisies[id] ? '👎' : '👍';
+          vibrer(15);
+        });
+      });
+    }
     majSelection();
 
     $('perso').querySelectorAll('.perso-bouton').forEach(function (el) {
@@ -245,6 +271,76 @@
       }
     });
   }
+
+  // ---------- Petit bac ----------
+  // ui.bac = {lettre, manche, categories:[…], reponses:[…], seche, bandeau:{texte, reste}}
+  // Envoie {t:'mot', i, mot} à chaque frappe, {t:'stop'} quand tout est rempli, {t:'seche', oui}.
+  function sansAccents(s) {
+    return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+      .replace(/œ/g, 'oe').replace(/æ/g, 'ae').replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  var bandeauBac = null; // {cle, texte, fin}
+  function remplirBac(ui) {
+    var b = ui.bac, lettre = b.lettre.toLowerCase(), seche = !!b.seche;
+    var h = '<div class="bac-tete"><div class="bac-lettre">' + echapper(b.lettre) + '</div><div class="bac-info"><b>' +
+      echapper(b.manche || '') + '</b><span>Un mot qui commence par ' + echapper(b.lettre) + ' dans chaque case</span></div></div>' +
+      '<div class="bac-bandeau"></div><div class="bac-liste">';
+    b.categories.forEach(function (cat, i) {
+      h += '<label class="bac-ligne"><span class="bac-cat">' + echapper(cat) + '</span><span class="bac-champ">' +
+        '<input data-i="' + i + '" maxlength="30" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" enterkeyhint="next" value="' +
+        echapper((b.reponses && b.reponses[i]) || '') + '"><span class="bac-ok"></span></span></label>';
+    });
+    h += '</div><button class="perso-bouton bac-stop" disabled>✋ STOP !</button>' +
+      '<button class="bac-seche">' + (seche ? '✍️ Je reprends' : '🏳️ Je sèche') + '</button>';
+    var zone = document.createElement('div');
+    zone.className = 'bac';
+    zone.innerHTML = h;
+    $('perso').appendChild(zone);
+    var champs = zone.querySelectorAll('input'), stop = zone.querySelector('.bac-stop');
+    function bon(v) { var n = sansAccents(v); return n.length >= 2 && n.charAt(0) === lettre; }
+    function maj() {
+      var tous = true;
+      champs.forEach(function (c) {
+        var v = c.value.trim(), ok = bon(v);
+        c.parentNode.querySelector('.bac-ok').textContent = !v ? '' : ok ? '✅' : '❌';
+        c.parentNode.className = 'bac-champ' + (v && !ok ? ' faux' : '') + (ok ? ' bon' : '');
+        if (!ok) tous = false;
+      });
+      stop.disabled = !tous;
+    }
+    champs.forEach(function (c, i) {
+      c.addEventListener('input', function () { envoyer({ t: 'mot', cle: ui.cle, i: i, mot: c.value.slice(0, 30) }); maj(); });
+      c.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        if (champs[i + 1]) champs[i + 1].focus(); else c.blur();
+      });
+    });
+    stop.addEventListener('click', function () {
+      if (stop.disabled) return;
+      champs.forEach(function (c) { envoyer({ t: 'mot', cle: ui.cle, i: +c.getAttribute('data-i'), mot: c.value.slice(0, 30) }); c.blur(); });
+      envoyer({ t: 'stop', cle: ui.cle });
+      stop.disabled = true;
+      vibrer(120);
+    });
+    zone.querySelector('.bac-seche').addEventListener('click', function () {
+      seche = !seche;
+      this.textContent = seche ? '✍️ Je reprends' : '🏳️ Je sèche';
+      envoyer({ t: 'seche', cle: ui.cle, oui: seche });
+      vibrer(20);
+    });
+    if (b.bandeau) bandeauBac = { cle: ui.cle, texte: b.bandeau.texte, fin: Date.now() + b.bandeau.reste * 1000 };
+    majBandeauBac();
+    maj();
+  }
+  function majBandeauBac() {
+    var el = $('perso').querySelector('.bac-bandeau');
+    if (!el) return;
+    var b = bandeauBac, ok = b && dernierUI && b.cle === dernierUI.cle;
+    el.style.display = ok ? '' : 'none';
+    if (ok) el.textContent = b.texte + ' · ' + Math.max(0, Math.ceil((b.fin - Date.now()) / 1000)) + ' s';
+  }
+  setInterval(majBandeauBac, 250);
 
   // Zone de dessin : chaque trait est envoyé à la télé en coordonnées 0..1.
   function brancherDessin(ui) {
@@ -442,6 +538,10 @@
         // On réessaie : une place peut se libérer (téléphone parti, limite augmentée).
         clearTimeout(minuterieReco);
         minuterieReco = setTimeout(function () { refuse = false; essais = 0; connecter(); }, 5000);
+      } else if (m.t === 'bandeau') {
+        bandeauBac = { cle: m.cle, texte: m.texte, fin: Date.now() + (m.reste || 0) * 1000 };
+        majBandeauBac();
+        vibrer(200);
       } else if (m.t === 'pong') {
         dernierPing = performance.now() - m.ts;
         etat('Connecté · ' + Math.round(dernierPing) + ' ms');
