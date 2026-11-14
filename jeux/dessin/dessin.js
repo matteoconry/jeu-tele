@@ -1,5 +1,5 @@
 /*
- * Le Défi Dessin — 2 à 4 joueurs.
+ * Le Défi Dessin — 2 à 8 joueurs.
  * Un mot, tout le monde dessine en même temps sur son téléphone, puis la télé dévoile les dessins
  * et chacun vote pour son dessin préféré (pas le sien). 100 points par vote reçu.
  */
@@ -76,7 +76,7 @@
       for (var i = 0; i < L.joueurs.length && !L.arrete; i++) {
         S.revele = { P: L.joueurs[i], t0: F.t };
         F.son.surprise();
-        await F.attendre(4);
+        await F.attendre(L.joueurs.length > 4 ? 3 : 4);
       }
       S.revele = null;
       // votes (chacun vote pour un autre)
@@ -117,6 +117,14 @@
       L.annulerTout('x');
       if (L.arrete) return;
       if (choix === 'rejouer') partie(); else api.quitter();
+    }
+
+    // Place n éléments : une rangée jusqu'à 4, sinon deux rangées (3+3, 4+4…).
+    function grille(n, k, ecart, y1, y2) {
+      if (n <= 4) return { x: 800 + (k - (n - 1) / 2) * ecart, y: y1 };
+      var parRangee = Math.ceil(n / 2), rangee = k < parRangee ? 0 : 1;
+      var dansRangee = rangee ? n - parRangee : parRangee, i = rangee ? k - parRangee : k;
+      return { x: 800 + (i - (dansRangee - 1) / 2) * ecart, y: rangee ? y2 : y1 };
     }
 
     // ---------- Dessin ----------
@@ -171,16 +179,16 @@
         c.fillStyle = reste <= 10 ? '#ff006e' : '#06d6a0'; F.rr(c, 400, 360, Math.max(30, 800 * q), 30, 15); c.fill();
         F.texte(c, '⏱ ' + reste + ' s', 800, 440, 44, reste <= 10 ? '#ff4d6d' : '#fff', { contour: false });
         // les joueurs : feuille cachée + nombre de traits
-        var n = L.joueurs.length;
+        var n = L.joueurs.length, gros = n <= 4, d = gros ? 110 : 70, z = gros ? 1 : 0.65;
         L.joueurs.forEach(function (P, k) {
-          var x = 800 + (k - (n - 1) / 2) * 320, y = 650;
+          var pos = grille(n, k, gros ? 320 : 250, gros ? 650 : 565, 770), x = pos.x, y = pos.y;
           c.save(); c.translate(x, y); c.rotate(Math.sin(F.t * 2 + k) * 0.03);
-          c.fillStyle = '#fff'; F.rr(c, -110, -110, 220, 220, 16); c.fill();
-          c.lineWidth = 6; c.strokeStyle = P.couleur; F.rr(c, -110, -110, 220, 220, 16); c.stroke();
-          F.texte(c, P.fini ? '✅' : '✏️', 0, -10 + (P.fini ? 0 : Math.sin(F.t * 8 + k) * 6), 70, '#000', { contour: false });
-          F.texte(c, P.traits.length + ' trait' + (P.traits.length > 1 ? 's' : ''), 0, 70, 22, '#6c757d', { contour: false });
+          c.fillStyle = '#fff'; F.rr(c, -d, -d, 2 * d, 2 * d, 16); c.fill();
+          c.lineWidth = 6; c.strokeStyle = P.couleur; F.rr(c, -d, -d, 2 * d, 2 * d, 16); c.stroke();
+          F.texte(c, P.fini ? '✅' : '✏️', 0, (-10 + (P.fini ? 0 : Math.sin(F.t * 8 + k) * 6)) * z, 70 * z, '#000', { contour: false });
+          F.texte(c, P.traits.length + ' trait' + (P.traits.length > 1 ? 's' : ''), 0, 70 * z, 22 * z, '#6c757d', { contour: false });
           c.restore();
-          F.texte(c, P.nom, x, y + 145, 32, '#fff', { contour: false });
+          F.texte(c, P.nom, x, y + d + (gros ? 35 : 22), gros ? 32 : 24, '#fff', { contour: false });
         });
       }
     }
@@ -197,19 +205,20 @@
       var g = S.galerie, n = L.joueurs.length;
       F.texte(c, S.galerie.resultats ? 'Résultats de la manche' : 'Votez pour le meilleur dessin !', 800, 70, 52, '#fff', { contour: false });
       F.texte(c, 'Le mot : ' + S.mot.fr, 800, 125, 30, '#ffd166', { contour: false });
-      var taille = n <= 2 ? 420 : n === 3 ? 380 : 330;
+      var taille = n <= 2 ? 420 : n === 3 ? 380 : n === 4 ? 330 : 262, gros = n <= 4;
       L.joueurs.forEach(function (P, k) {
-        var x = 800 + (k - (n - 1) / 2) * (taille + 40), y = 440;
+        var pos = grille(n, k, taille + 40, gros ? 440 : 300, 640), x = pos.x, y = pos.y;
         feuille(c, P, x, y, taille, { rot: (k % 2 ? 1 : -1) * 0.025 });
-        F.texte(c, P.nom, x, y + taille / 2 + 40, 34, '#fff', { contour: false });
+        F.texte(c, P.nom + (gros || !L.enAttente(P) || g.resultats ? '' : '  🗳️'), x, y + taille / 2 + (gros ? 40 : 26), gros ? 34 : 26, '#fff', { contour: false });
         if (g.resultats) {
           var q = F.ease.back(Math.min(1, (F.t - g.resultats) * F.V / 0.5));
           c.save(); c.translate(x + taille / 2 - 20, y - taille / 2 + 10); c.scale(q, q);
+          if (!gros) c.scale(0.8, 0.8);
           c.fillStyle = '#ffd166'; c.beginPath(); c.arc(0, 0, 54, 0, 7); c.fill();
           F.texte(c, '+' + P.gain, 0, -6, 32, '#1b1b2f', { contour: false });
           F.texte(c, P.votes + ' vote' + (P.votes > 1 ? 's' : ''), 0, 24, 16, '#1b1b2f', { contour: false });
           c.restore();
-        } else if (L.enAttente(P)) F.texte(c, '🗳️ vote…', x, y + taille / 2 + 84, 24, '#fff', { contour: false });
+        } else if (gros && L.enAttente(P)) F.texte(c, '🗳️ vote…', x, y + taille / 2 + 84, 24, '#fff', { contour: false });
       });
     }
 
@@ -244,14 +253,15 @@
       var f = S.fin2, q = Math.min(1, (F.t - f.t0) * F.V / 0.5);
       c.fillStyle = 'rgba(26,11,46,' + 0.92 * q + ')'; c.fillRect(0, 0, 1600, 900);
       F.texte(c, f.ordre[0].nom + ' est le meilleur artiste !', 800, 140, 70, '#ffd166', { contour: '#3a0ca3', epaisseur: 12 });
+      var n = f.ordre.length, pas = n <= 4 ? 130 : 82, h = n <= 4 ? 110 : 70, m = h / 2, z = n <= 4 ? 1 : 0.75;
       f.ordre.forEach(function (P, k) {
-        var y = 250 + k * 130;
-        c.fillStyle = P.rang === 1 ? 'rgba(255,209,102,.95)' : 'rgba(255,255,255,.12)'; F.rr(c, 300, y, 1000, 110, 26); c.fill();
+        var y = (n <= 4 ? 250 : 215) + k * pas;
+        c.fillStyle = P.rang === 1 ? 'rgba(255,209,102,.95)' : 'rgba(255,255,255,.12)'; F.rr(c, 300, y, 1000, h, h / 4); c.fill();
         var col = P.rang === 1 ? '#1b1b2f' : '#fff';
-        F.texte(c, F.texteRang(P.rang), 370, y + 55, 46, col, { contour: false });
-        c.fillStyle = P.couleur; c.beginPath(); c.arc(470, y + 55, 24, 0, 7); c.fill();
-        F.texte(c, P.nom, 520, y + 55, 46, col, { align: 'left', contour: false });
-        F.texte(c, P.score + ' pts', 1260, y + 55, 42, col, { align: 'right', contour: false });
+        F.texte(c, F.texteRang(P.rang), 370, y + m, 46 * z, col, { contour: false });
+        c.fillStyle = P.couleur; c.beginPath(); c.arc(470, y + m, 24 * z, 0, 7); c.fill();
+        F.texte(c, P.nom, 520, y + m, 46 * z, col, { align: 'left', contour: false });
+        F.texte(c, P.score + ' pts', 1260, y + m, 42 * z, col, { align: 'right', contour: false });
       });
       if (q >= 1 && Math.random() < 0.4) S.particules.ajouter(F.alea(0, 1600), -20, { vx: F.alea(-60, 60), vy: F.alea(60, 200), g: 120, vie: 5, taille: F.alea(10, 18), couleur: F.choisir(['#ff006e', '#ffbe0b', '#3a86ff', '#8338ec', '#06d6a0']), forme: 'confetti' });
     }
@@ -278,6 +288,6 @@
   Console.ajouterJeu({
     id: 'dessin', nom: 'Le Défi Dessin', emoji: '🎨',
     description: 'Tout le monde dessine le même mot sur son téléphone, puis vous votez pour le meilleur dessin !',
-    min: 2, max: 4, perso: true, barre: false, creer: creer
+    min: 2, max: 8, perso: true, barre: false, creer: creer
   });
 })(Fiesta);
